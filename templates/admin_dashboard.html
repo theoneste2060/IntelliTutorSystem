@@ -254,33 +254,74 @@
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
-            <form method="POST" action="{{ url_for('upload_exam') }}" enctype="multipart/form-data">
+            <form method="POST" action="{{ url_for('upload_exam') }}" enctype="multipart/form-data" id="uploadForm">
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="exam_file" class="form-label">Select PDF File</label>
+                    <div class="mb-4">
+                        <label for="exam_file" class="form-label fw-medium">NESA Exam Paper (PDF)</label>
                         <input type="file" class="form-control" id="exam_file" name="exam_file" accept=".pdf" required>
                         <div class="form-text">
-                            <i class="fas fa-info-circle text-primary me-1"></i>
-                            Upload a PDF exam paper. The system will extract questions automatically.
+                            <i class="fas fa-robot text-primary me-1"></i>
+                            Upload NESA exam PDF. Questions will be extracted using NLP and answers generated automatically.
                         </div>
                     </div>
-                    <div class="mb-3">
-                        <label for="subject" class="form-label">Subject</label>
+
+                    <div class="row g-3 mb-4">
+                        <div class="col-md-6">
+                            <label for="course" class="form-label fw-medium">Course/Trade</label>
+                            <select class="form-select" id="course" name="course" required>
+                                <option value="">Select Course</option>
+                                <option value="Masonry">Masonry</option>
+                                <option value="Construction">Construction</option>
+                                <option value="Carpentry">Carpentry</option>
+                                <option value="Plumbing">Plumbing</option>
+                                <option value="Electrical">Electrical</option>
+                                <option value="Welding">Welding</option>
+                                <option value="General">General</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="level" class="form-label fw-medium">Level</label>
+                            <select class="form-select" id="level" name="level" required>
+                                <option value="">Select Level</option>
+                                <option value="Level 3">Level 3</option>
+                                <option value="Level 4">Level 4</option>
+                                <option value="Level 5" selected>Level 5</option>
+                                <option value="Level 6">Level 6</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label for="subject" class="form-label fw-medium">Subject Area</label>
                         <select class="form-select" id="subject" name="subject" required>
                             <option value="">Select Subject</option>
-                            {% for subject in subjects %}
-                                <option value="{{ subject }}">{{ subject }}</option>
-                            {% endfor %}
-                            <option value="other">Other (Specify Below)</option>
+                            <option value="Elevation and Scaffolding Operations">Elevation and Scaffolding Operations</option>
+                            <option value="Construction Technology">Construction Technology</option>
+                            <option value="Safety and Health">Safety and Health</option>
+                            <option value="Materials and Tools">Materials and Tools</option>
+                            <option value="Technical Drawing">Technical Drawing</option>
+                            <option value="Mathematics">Mathematics</option>
+                            <option value="Science">Science</option>
+                            <option value="English">English</option>
                         </select>
                     </div>
-                    <div class="mb-3">
-                        <label for="custom_subject" class="form-label">Custom Subject (if Other)</label>
-                        <input type="text" class="form-control" id="custom_subject" name="custom_subject" placeholder="Enter new subject name">
-                    </div>
-                    <div class="alert alert-warning">
-                        <i class="fas fa-exclamation-triangle me-2"></i>
-                        <strong>Note:</strong> This is a mock upload feature. In a real system, the PDF would be processed to extract questions using OCR and NLP techniques.
+
+                    <div class="alert alert-info border-0">
+                        <div class="row align-items-center">
+                            <div class="col-2 text-center">
+                                <i class="fas fa-brain fa-2x text-primary"></i>
+                            </div>
+                            <div class="col-10">
+                                <h6 class="fw-bold mb-1">AI-Powered Processing</h6>
+                                <p class="mb-0 small">The system will:</p>
+                                <ul class="mb-0 small">
+                                    <li>Extract questions from PDF using OCR and pattern recognition</li>
+                                    <li>Generate comprehensive answers using NLP techniques</li>
+                                    <li>Classify questions by type, complexity, and topic</li>
+                                    <li>Allow you to review, edit, and approve before saving</li>
+                                </ul>
+                            </div>
+                        </div>
                     </div>
                 </div>
                 <div class="modal-footer">

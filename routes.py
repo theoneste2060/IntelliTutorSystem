@@ -13,6 +13,7 @@ from data_store import (
     get_random_question_by_filters,
     SAMPLE_QUESTIONS
 )
+from exam_processor import exam_processor
 import random
 
 # Register the auth blueprint
@@ -179,24 +180,113 @@ def admin_dashboard():
 @app.route('/admin/upload', methods=['POST'])
 @require_admin
 def upload_exam():
-    """Mock PDF upload functionality (UI only)"""
+    """Upload and process NESA exam PDF with NLP question extraction"""
     
     if 'exam_file' not in request.files:
-        flash('No file selected.', 'warning')
+        flash('No file selected for upload.', 'error')
         return redirect(url_for('admin_dashboard'))
     
     file = request.files['exam_file']
     if file.filename == '':
-        flash('No file selected.', 'warning')
+        flash('No file selected for upload.', 'error')
         return redirect(url_for('admin_dashboard'))
     
-    if file and file.filename and file.filename.lower().endswith('.pdf'):
-        # Mock processing - in a real system, this would process the PDF
-        flash(f'Mock: PDF "{file.filename}" uploaded successfully! In a real system, this would be processed to extract questions.', 'success')
-    else:
+    if not exam_processor.allowed_file(file.filename):
         flash('Please upload a PDF file only.', 'error')
+        return redirect(url_for('admin_dashboard'))
     
-    return redirect(url_for('admin_dashboard'))
+    try:
+        # Save uploaded file
+        filepath = exam_processor.save_uploaded_file(file)
+        if not filepath:
+            flash('Error saving uploaded file.', 'error')
+            return redirect(url_for('admin_dashboard'))
+        
+        # Get exam metadata from form
+        exam_metadata = {
+            'course': request.form.get('course', 'General'),
+            'level': request.form.get('level', 'Level 5'),
+            'subject': request.form.get('subject', 'Construction')
+        }
+        
+        # Process PDF and extract questions
+        result = exam_processor.process_pdf(filepath, exam_metadata)
+        
+        if result['success']:
+            # Store extracted questions in session for review
+            session['extracted_questions'] = result['questions']
+            session['extraction_metadata'] = result['metadata']
+            
+            flash(f'Successfully extracted {result["total_extracted"]} questions from "{file.filename}". Review and edit below.', 'success')
+            return redirect(url_for('review_extracted_questions'))
+        else:
+            flash(f'Error processing PDF: {result["error"]}', 'error')
+            return redirect(url_for('admin_dashboard'))
+            
+    except Exception as e:
+        flash(f'Error uploading exam: {str(e)}', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+@app.route('/admin/review-questions')
+@require_admin
+def review_extracted_questions():
+    """Review and edit extracted questions before saving"""
+    questions = session.get('extracted_questions', [])
+    metadata = session.get('extraction_metadata', {})
+    
+    if not questions:
+        flash('No questions to review. Please upload an exam paper first.', 'warning')
+        return redirect(url_for('admin_dashboard'))
+    
+    return render_template('admin_review_questions.html', 
+                         questions=questions, 
+                         metadata=metadata,
+                         subjects=get_all_subjects())
+
+@app.route('/admin/save-questions', methods=['POST'])
+@require_admin
+def save_extracted_questions():
+    """Save selected and edited questions to database"""
+    questions = session.get('extracted_questions', [])
+    
+    if not questions:
+        flash('No questions to save. Please upload an exam paper first.', 'error')
+        return redirect(url_for('admin_dashboard'))
+    
+    try:
+        # Get admin selections and modifications
+        admin_selections = {}
+        
+        for question in questions:
+            question_id = question['id']
+            
+            # Check if question was selected
+            if request.form.get(f'select_{question_id}'):
+                admin_selections[question_id] = {
+                    'text': request.form.get(f'text_{question_id}', question['text']),
+                    'generated_answer': request.form.get(f'answer_{question_id}', question['generated_answer']),
+                    'complexity': request.form.get(f'complexity_{question_id}', question['complexity']),
+                    'course': request.form.get(f'course_{question_id}', question['course']),
+                    'topic': request.form.get(f'topic_{question_id}', question['topic']),
+                    'marks': int(request.form.get(f'marks_{question_id}', question['marks']))
+                }
+        
+        # Save selected questions
+        result = exam_processor.save_questions_to_database(questions, admin_selections)
+        
+        if result['success']:
+            flash(f'{result["message"]}', 'success')
+            # Clear session data
+            session.pop('extracted_questions', None)
+            session.pop('extraction_metadata', None)
+        else:
+            flash(f'Error saving questions: {result["error"]}', 'error')
+        
+        return redirect(url_for('admin_dashboard'))
+        
+    except Exception as e:
+        flash(f'Error processing form data: {str(e)}', 'error')
+        return redirect(url_for('review_extracted_questions'))
 
 @app.route('/admin/set_role/<user_id>/<role>')
 @require_admin
