@@ -10,6 +10,7 @@ from data_store import (
     get_all_subjects, 
     get_topics_by_subject,
     get_questions_by_subject,
+    get_random_question_by_filters,
     SAMPLE_QUESTIONS
 )
 import random
@@ -55,18 +56,43 @@ def student_dashboard():
         db.session.commit()
         flash(f'Congratulations! You earned a new badge for answering {user.questions_correct} questions correctly!', 'success')
     
+    # Get available subjects for course selection
+    subjects = get_all_subjects()
+    
     return render_template('student_dashboard.html', 
                          user=user, 
                          accuracy=accuracy, 
-                         avg_score=avg_score)
+                         avg_score=avg_score,
+                         subjects=subjects)
 
 @app.route('/student/question')
 @require_login
 def get_question():
     """Present a random question to the student"""
-    question = get_random_question()
+    # Get filter parameters from URL
+    subject = request.args.get('subject')
+    topic = request.args.get('topic')
+    
+    # Get filtered question or random if no filters
+    if subject or topic:
+        question = get_random_question_by_filters(subject, topic)
+        if not question:
+            flash(f'No questions found for the selected filters. Getting a random question instead.', 'info')
+            question = get_random_question()
+    else:
+        question = get_random_question()
+    
     session['current_question_id'] = question['id']
-    return render_template('question.html', question=question)
+    return render_template('question.html', question=question, 
+                         selected_subject=subject, selected_topic=topic)
+
+@app.route('/api/topics/<subject>')
+@require_login
+def get_topics_for_subject(subject):
+    """API endpoint to get topics for a specific subject"""
+    from flask import jsonify
+    topics = get_topics_by_subject(subject)
+    return jsonify({'topics': topics})
 
 @app.route('/student/submit', methods=['POST'])
 @require_login

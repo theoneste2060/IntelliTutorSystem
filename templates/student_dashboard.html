@@ -213,6 +213,56 @@
         </div>
     </div>
 
+    <!-- Course Selection -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary-gradient text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>Choose Your Course
+                    </h5>
+                </div>
+                <div class="card-body p-4">
+                    <form id="courseSelectionForm">
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="subjectSelect" class="form-label fw-medium">Subject</label>
+                                <select class="form-select" id="subjectSelect" name="subject">
+                                    <option value="">All Subjects</option>
+                                    {% for subject in subjects %}
+                                        <option value="{{ subject }}">{{ subject }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="topicSelect" class="form-label fw-medium">Topic</label>
+                                <select class="form-select" id="topicSelect" name="topic" disabled>
+                                    <option value="">Select a subject first</option>
+                                </select>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-md-8">
+                                <div class="course-info p-3 bg-light rounded">
+                                    <div id="courseInfo">
+                                        <h6 class="fw-bold text-primary mb-2">Practice Mode</h6>
+                                        <p class="text-muted mb-0">Select a subject and optional topic to start focused practice, or leave both blank for mixed questions from all subjects.</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-primary btn-lg w-100" id="startPracticeBtn">
+                                    <i class="fas fa-play me-2"></i>Start Practice
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Quick Actions -->
     <div class="row mt-4">
         <div class="col-12">
@@ -222,8 +272,8 @@
                 </h5>
                 <div class="row g-3">
                     <div class="col-md-4">
-                        <a href="{{ url_for('get_question') }}" class="btn btn-primary w-100">
-                            <i class="fas fa-play me-2"></i>New Question
+                        <a href="{{ url_for('get_question') }}" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-random me-2"></i>Random Question
                         </a>
                     </div>
                     <div class="col-md-4">
@@ -241,4 +291,104 @@
         </div>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const subjectSelect = document.getElementById('subjectSelect');
+    const topicSelect = document.getElementById('topicSelect');
+    const courseInfo = document.getElementById('courseInfo');
+    const courseForm = document.getElementById('courseSelectionForm');
+
+    // Handle subject selection
+    subjectSelect.addEventListener('change', function() {
+        const selectedSubject = this.value;
+        
+        if (selectedSubject) {
+            // Enable topic select and fetch topics
+            topicSelect.disabled = false;
+            topicSelect.innerHTML = '<option value="">Loading topics...</option>';
+            
+            // Fetch topics for selected subject
+            fetch(`/api/topics/${encodeURIComponent(selectedSubject)}`)
+                .then(response => response.json())
+                .then(data => {
+                    topicSelect.innerHTML = '<option value="">All Topics</option>';
+                    data.topics.forEach(topic => {
+                        const option = document.createElement('option');
+                        option.value = topic;
+                        option.textContent = topic;
+                        topicSelect.appendChild(option);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error fetching topics:', error);
+                    topicSelect.innerHTML = '<option value="">Error loading topics</option>';
+                });
+            
+            updateCourseInfo(selectedSubject, '');
+        } else {
+            // Reset topic select
+            topicSelect.disabled = true;
+            topicSelect.innerHTML = '<option value="">Select a subject first</option>';
+            updateCourseInfo('', '');
+        }
+    });
+
+    // Handle topic selection
+    topicSelect.addEventListener('change', function() {
+        const selectedSubject = subjectSelect.value;
+        const selectedTopic = this.value;
+        updateCourseInfo(selectedSubject, selectedTopic);
+    });
+
+    // Handle form submission
+    courseForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const selectedSubject = subjectSelect.value;
+        const selectedTopic = topicSelect.value;
+        
+        // Build URL with query parameters
+        let url = '{{ url_for("get_question") }}';
+        const params = new URLSearchParams();
+        
+        if (selectedSubject) {
+            params.append('subject', selectedSubject);
+        }
+        if (selectedTopic) {
+            params.append('topic', selectedTopic);
+        }
+        
+        if (params.toString()) {
+            url += '?' + params.toString();
+        }
+        
+        // Redirect to question page
+        window.location.href = url;
+    });
+
+    function updateCourseInfo(subject, topic) {
+        let infoHTML = '';
+        
+        if (subject && topic) {
+            infoHTML = `
+                <h6 class="fw-bold text-primary mb-2">Focused Practice: ${subject} - ${topic}</h6>
+                <p class="text-muted mb-0">You'll practice questions specifically about <strong>${topic}</strong> in <strong>${subject}</strong>.</p>
+            `;
+        } else if (subject) {
+            infoHTML = `
+                <h6 class="fw-bold text-primary mb-2">Subject Practice: ${subject}</h6>
+                <p class="text-muted mb-0">You'll practice questions from all topics in <strong>${subject}</strong>.</p>
+            `;
+        } else {
+            infoHTML = `
+                <h6 class="fw-bold text-primary mb-2">Mixed Practice</h6>
+                <p class="text-muted mb-0">You'll get random questions from all subjects and topics for comprehensive practice.</p>
+            `;
+        }
+        
+        courseInfo.innerHTML = infoHTML;
+    }
+});
+</script>
 {% endblock %}

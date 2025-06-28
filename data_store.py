@@ -133,3 +133,24 @@ def get_all_subjects():
 def get_topics_by_subject(subject):
     """Get all topics for a specific subject"""
     return list(set(q['topic'] for q in SAMPLE_QUESTIONS if q['subject'].lower() == subject.lower()))
+
+def get_questions_by_subject_and_topic(subject, topic=None):
+    """Get questions filtered by subject and optionally by topic"""
+    questions = [q for q in SAMPLE_QUESTIONS if q['subject'].lower() == subject.lower()]
+    if topic:
+        questions = [q for q in questions if q['topic'].lower() == topic.lower()]
+    return questions
+
+def get_random_question_by_filters(subject=None, topic=None):
+    """Get a random question filtered by subject and/or topic"""
+    if subject and topic:
+        filtered_questions = get_questions_by_subject_and_topic(subject, topic)
+    elif subject:
+        filtered_questions = get_questions_by_subject(subject)
+    else:
+        filtered_questions = SAMPLE_QUESTIONS
+    
+    if not filtered_questions:
+        return None
+    
+    return random.choice(filtered_questions)
