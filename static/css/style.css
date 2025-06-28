@@ -488,6 +488,45 @@ footer {
     }
 }
 
+/* Google Auth Divider Styles */
+.divider {
+    position: relative;
+    text-align: center;
+    margin: 1.5rem 0;
+}
+
+.divider:before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(to right, transparent, #dee2e6, transparent);
+}
+
+.divider-text {
+    background: white;
+    padding: 0 1rem;
+    color: #6c757d;
+    font-size: 0.875rem;
+    font-weight: 500;
+}
+
+/* Google Auth Button Styles */
+.btn-outline-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
+.btn-outline-danger:disabled:hover {
+    background-color: transparent;
+    border-color: #dc3545;
+    color: #dc3545;
+}
+
 /* Accessibility Improvements */
 .sr-only {
     position: absolute;
