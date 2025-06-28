@@ -1,0 +1,156 @@
+{% extends "base.html" %}
+
+{% block title %}Question - IntelliTutor{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <!-- Question Header -->
+            <div class="question-header bg-primary-gradient text-white p-4 rounded-top">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h2 class="h3 fw-bold mb-2">
+                            <i class="fas fa-question-circle me-2"></i>{{ question.subject }} - {{ question.topic }}
+                        </h2>
+                        <div class="question-meta">
+                            <span class="badge bg-light text-dark me-2">
+                                <i class="fas fa-layer-group me-1"></i>{{ question.difficulty.title() }}
+                            </span>
+                            <span class="badge bg-accent">
+                                <i class="fas fa-clock me-1"></i>No Time Limit
+                            </span>
+                        </div>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-light">
+                            <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Question Content -->
+            <div class="question-content bg-white shadow-sm rounded-bottom p-4">
+                <form method="POST" action="{{ url_for('submit_answer') }}" id="answerForm">
+                    <div class="question-text mb-4">
+                        <h4 class="fw-bold text-dark mb-3">Question:</h4>
+                        <div class="question-display p-4 bg-light rounded border-start border-primary border-4">
+                            <p class="h5 text-dark mb-0">{{ question.question_text }}</p>
+                        </div>
+                    </div>
+
+                    <div class="answer-section">
+                        <label for="answer" class="form-label h5 fw-bold text-dark">Your Answer:</label>
+                        <textarea 
+                            class="form-control form-control-lg" 
+                            id="answer" 
+                            name="answer" 
+                            rows="6" 
+                            placeholder="Type your detailed answer here... Be as thorough as possible for better scoring."
+                            required
+                            autofocus
+                        ></textarea>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            Provide a detailed explanation to get the best score from our AI tutor.
+                        </div>
+                    </div>
+
+                    <div class="action-buttons mt-4 d-flex gap-3">
+                        <button type="submit" class="btn btn-primary btn-lg flex-grow-1">
+                            <i class="fas fa-paper-plane me-2"></i>Submit Answer
+                        </button>
+                        <button type="button" class="btn btn-outline-secondary btn-lg" onclick="clearAnswer()">
+                            <i class="fas fa-eraser me-2"></i>Clear
+                        </button>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tips Section -->
+            <div class="tips-section mt-4">
+                <div class="card bg-light border-0">
+                    <div class="card-body">
+                        <h6 class="card-title fw-bold text-primary mb-3">
+                            <i class="fas fa-lightbulb me-2"></i>Tips for Better Scores
+                        </h6>
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <div class="tip-item d-flex">
+                                    <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                    <small>Explain your reasoning step by step</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tip-item d-flex">
+                                    <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                    <small>Include relevant formulas or concepts</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tip-item d-flex">
+                                    <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                    <small>Be specific and avoid vague statements</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="tip-item d-flex">
+                                    <i class="fas fa-check-circle text-success me-2 mt-1"></i>
+                                    <small>Double-check your work before submitting</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function clearAnswer() {
+    document.getElementById('answer').value = '';
+    document.getElementById('answer').focus();
+}
+
+// Auto-save draft to localStorage
+const answerTextarea = document.getElementById('answer');
+const draftKey = 'intellitutor_draft_{{ question.id }}';
+
+// Load draft on page load
+window.addEventListener('load', function() {
+    const draft = localStorage.getItem(draftKey);
+    if (draft && answerTextarea.value === '') {
+        answerTextarea.value = draft;
+    }
+});
+
+// Save draft as user types
+answerTextarea.addEventListener('input', function() {
+    localStorage.setItem(draftKey, this.value);
+});
+
+// Clear draft on successful submit
+document.getElementById('answerForm').addEventListener('submit', function() {
+    localStorage.removeItem(draftKey);
+});
+
+// Character counter
+answerTextarea.addEventListener('input', function() {
+    const length = this.value.length;
+    const formText = this.parentNode.querySelector('.form-text');
+    if (length > 0) {
+        formText.innerHTML = `
+            <i class="fas fa-info-circle text-primary me-1"></i>
+            ${length} characters written. Provide a detailed explanation to get the best score from our AI tutor.
+        `;
+    } else {
+        formText.innerHTML = `
+            <i class="fas fa-info-circle text-primary me-1"></i>
+            Provide a detailed explanation to get the best score from our AI tutor.
+        `;
+    }
+});
+</script>
+{% endblock %}

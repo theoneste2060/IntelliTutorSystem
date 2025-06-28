@@ -1,0 +1,319 @@
+{% extends "base.html" %}
+
+{% block title %}Admin Dashboard - IntelliTutor{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Admin Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="admin-header bg-dark text-white p-4 rounded-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 fw-bold mb-2">
+                            <i class="fas fa-shield-alt me-2 text-warning"></i>Admin Dashboard
+                        </h1>
+                        <p class="mb-0 opacity-75">Manage questions, monitor student progress, and system analytics</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <span class="badge bg-warning text-dark px-3 py-2">
+                            <i class="fas fa-crown me-1"></i>Administrator
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Overview -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-primary text-white rounded-3 p-4 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-users fs-2"></i>
+                    </div>
+                    <div>
+                        <h3 class="h2 fw-bold mb-1">{{ total_users }}</h3>
+                        <p class="mb-0 opacity-75">Total Users</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-success text-white rounded-3 p-4 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-user-graduate fs-2"></i>
+                    </div>
+                    <div>
+                        <h3 class="h2 fw-bold mb-1">{{ active_students }}</h3>
+                        <p class="mb-0 opacity-75">Active Students</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-info text-white rounded-3 p-4 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-question-circle fs-2"></i>
+                    </div>
+                    <div>
+                        <h3 class="h2 fw-bold mb-1">{{ sample_questions|length }}</h3>
+                        <p class="mb-0 opacity-75">Total Questions</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6">
+            <div class="stat-card bg-warning text-dark rounded-3 p-4 shadow-sm">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon me-3">
+                        <i class="fas fa-book fs-2"></i>
+                    </div>
+                    <div>
+                        <h3 class="h2 fw-bold mb-1">{{ subjects|length }}</h3>
+                        <p class="mb-0 opacity-75">Subjects</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Question Management -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="card-title mb-0">
+                            <i class="fas fa-cogs text-primary me-2"></i>Question Management
+                        </h5>
+                        <button class="btn btn-primary btn-sm" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="fas fa-upload me-2"></i>Upload Exam
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <!-- Subject Tabs -->
+                    <ul class="nav nav-pills mb-4" id="subjectTabs">
+                        {% for subject in subjects %}
+                            <li class="nav-item">
+                                <a class="nav-link {% if loop.first %}active{% endif %}" 
+                                   id="{{ subject|lower|replace(' ', '_') }}-tab" 
+                                   data-bs-toggle="pill" 
+                                   href="#{{ subject|lower|replace(' ', '_') }}" 
+                                   role="tab">
+                                    {{ subject }}
+                                    <span class="badge bg-light text-dark ms-2">{{ subject_stats[subject].count }}</span>
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+
+                    <!-- Subject Content -->
+                    <div class="tab-content" id="subjectTabsContent">
+                        {% for subject in subjects %}
+                            <div class="tab-pane fade {% if loop.first %}show active{% endif %}" 
+                                 id="{{ subject|lower|replace(' ', '_') }}" 
+                                 role="tabpanel">
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <h6 class="fw-bold">Topics in {{ subject }}:</h6>
+                                        <div class="topic-tags">
+                                            {% for topic in subject_stats[subject].topics %}
+                                                <span class="badge bg-secondary me-1 mb-1">{{ topic }}</span>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6 text-md-end">
+                                        <button class="btn btn-outline-primary btn-sm">
+                                            <i class="fas fa-plus me-1"></i>Add Question
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <!-- Questions for this subject -->
+                                <div class="questions-list">
+                                    {% for question in sample_questions %}
+                                        {% if question.subject == subject %}
+                                            <div class="question-item border rounded p-3 mb-3">
+                                                <div class="row align-items-start">
+                                                    <div class="col-md-8">
+                                                        <div class="d-flex align-items-center mb-2">
+                                                            <span class="badge bg-primary me-2">{{ question.topic }}</span>
+                                                            <span class="badge bg-{{ 'success' if question.difficulty == 'easy' else 'warning' if question.difficulty == 'medium' else 'danger' }}">
+                                                                {{ question.difficulty.title() }}
+                                                            </span>
+                                                        </div>
+                                                        <p class="mb-2 fw-medium">{{ question.question_text[:100] }}{% if question.question_text|length > 100 %}...{% endif %}</p>
+                                                        <small class="text-muted">ID: {{ question.id }}</small>
+                                                    </div>
+                                                    <div class="col-md-4 text-md-end">
+                                                        <div class="btn-group btn-group-sm">
+                                                            <button class="btn btn-outline-primary" data-bs-toggle="tooltip" title="View">
+                                                                <i class="fas fa-eye"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Edit">
+                                                                <i class="fas fa-edit"></i>
+                                                            </button>
+                                                            <button class="btn btn-outline-danger" data-bs-toggle="tooltip" title="Delete">
+                                                                <i class="fas fa-trash"></i>
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity & Quick Actions -->
+        <div class="col-lg-4">
+            <!-- Recent Student Answers -->
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock text-info me-2"></i>Recent Activity
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if recent_answers %}
+                        {% for answer in recent_answers %}
+                            <div class="activity-item d-flex align-items-start mb-3 pb-3 {% if not loop.last %}border-bottom{% endif %}">
+                                <div class="activity-icon me-3">
+                                    <i class="fas fa-user-circle text-muted fs-5"></i>
+                                </div>
+                                <div class="activity-content flex-grow-1">
+                                    <p class="mb-1 fw-medium">{{ answer.user.first_name or answer.user.email[:20] }}</p>
+                                    <p class="mb-1 small text-muted">Scored {{ answer.score }}/100</p>
+                                    <small class="text-muted">{{ answer.created_at.strftime('%m/%d %H:%M') }}</small>
+                                </div>
+                                <div class="activity-score">
+                                    <span class="badge bg-{{ 'success' if answer.score >= 80 else 'warning' if answer.score >= 60 else 'danger' }}">
+                                        {{ answer.score }}
+                                    </span>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-clock text-muted display-4 mb-3"></i>
+                            <p class="text-muted">No recent activity</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Quick Actions -->
+            <div class="card shadow-sm">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt text-warning me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#uploadModal">
+                            <i class="fas fa-upload me-2"></i>Upload New Exam
+                        </button>
+                        <button class="btn btn-outline-primary">
+                            <i class="fas fa-plus me-2"></i>Add Question Manually
+                        </button>
+                        <button class="btn btn-outline-info">
+                            <i class="fas fa-chart-bar me-2"></i>View Analytics
+                        </button>
+                        <button class="btn btn-outline-success">
+                            <i class="fas fa-download me-2"></i>Export Data
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Upload Modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-upload text-primary me-2"></i>Upload Exam Paper
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form method="POST" action="{{ url_for('upload_exam') }}" enctype="multipart/form-data">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="exam_file" class="form-label">Select PDF File</label>
+                        <input type="file" class="form-control" id="exam_file" name="exam_file" accept=".pdf" required>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle text-primary me-1"></i>
+                            Upload a PDF exam paper. The system will extract questions automatically.
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="subject" class="form-label">Subject</label>
+                        <select class="form-select" id="subject" name="subject" required>
+                            <option value="">Select Subject</option>
+                            {% for subject in subjects %}
+                                <option value="{{ subject }}">{{ subject }}</option>
+                            {% endfor %}
+                            <option value="other">Other (Specify Below)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="custom_subject" class="form-label">Custom Subject (if Other)</label>
+                        <input type="text" class="form-control" id="custom_subject" name="custom_subject" placeholder="Enter new subject name">
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Note:</strong> This is a mock upload feature. In a real system, the PDF would be processed to extract questions using OCR and NLP techniques.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload me-2"></i>Upload & Process
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Initialize tooltips
+var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+  return new bootstrap.Tooltip(tooltipTriggerEl)
+});
+
+// Subject selection logic
+document.getElementById('subject').addEventListener('change', function() {
+    const customSubjectField = document.getElementById('custom_subject');
+    if (this.value === 'other') {
+        customSubjectField.style.display = 'block';
+        customSubjectField.required = true;
+    } else {
+        customSubjectField.style.display = 'none';
+        customSubjectField.required = false;
+        customSubjectField.value = '';
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - IntelliTutor{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <!-- Welcome Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="welcome-header bg-primary-gradient text-white p-4 rounded-3">
+                <div class="row align-items-center">
+                    <div class="col-md-8">
+                        <h1 class="h2 fw-bold mb-2">
+                            Welcome back, {{ current_user.first_name or 'Student' }}! 
+                            <i class="fas fa-hand-wave text-accent"></i>
+                        </h1>
+                        <p class="mb-0 opacity-90">Ready to continue your learning journey?</p>
+                    </div>
+                    <div class="col-md-4 text-md-end">
+                        <a href="{{ url_for('get_question') }}" class="btn btn-light btn-lg">
+                            <i class="fas fa-play me-2"></i>Start New Question
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-3">
+            <div class="stat-card bg-white rounded-3 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-primary-light rounded-circle p-3 me-3">
+                        <i class="fas fa-question-circle text-primary fs-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="h4 fw-bold text-primary mb-1">{{ user.questions_attempted }}</h3>
+                        <p class="text-muted mb-0">Questions Attempted</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card bg-white rounded-3 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-success-light rounded-circle p-3 me-3">
+                        <i class="fas fa-check-circle text-success fs-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="h4 fw-bold text-success mb-1">{{ user.questions_correct }}</h3>
+                        <p class="text-muted mb-0">Correct Answers</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card bg-white rounded-3 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-warning-light rounded-circle p-3 me-3">
+                        <i class="fas fa-percentage text-warning fs-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="h4 fw-bold text-warning mb-1">{{ accuracy }}%</h3>
+                        <p class="text-muted mb-0">Accuracy Rate</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-3">
+            <div class="stat-card bg-white rounded-3 p-4 shadow-sm h-100">
+                <div class="d-flex align-items-center">
+                    <div class="stat-icon bg-info-light rounded-circle p-3 me-3">
+                        <i class="fas fa-star text-info fs-4"></i>
+                    </div>
+                    <div>
+                        <h3 class="h4 fw-bold text-info mb-1">{{ avg_score }}</h3>
+                        <p class="text-muted mb-0">Average Score</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row g-4">
+        <!-- Progress Section -->
+        <div class="col-lg-8">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-line text-primary me-2"></i>Your Progress
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user.questions_attempted > 0 %}
+                        <div class="row g-3">
+                            <div class="col-sm-6">
+                                <div class="progress-item">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-medium">Accuracy Rate</span>
+                                        <span class="text-primary fw-bold">{{ accuracy }}%</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-primary" style="width: {{ accuracy }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-sm-6">
+                                <div class="progress-item">
+                                    <div class="d-flex justify-content-between mb-2">
+                                        <span class="fw-medium">Average Score</span>
+                                        <span class="text-success fw-bold">{{ avg_score }}/100</span>
+                                    </div>
+                                    <div class="progress" style="height: 8px;">
+                                        <div class="progress-bar bg-success" style="width: {{ avg_score }}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mt-4">
+                            <h6 class="fw-bold mb-3">Performance Insights</h6>
+                            <div class="row g-3">
+                                <div class="col-sm-6">
+                                    <div class="insight-card p-3 bg-light rounded">
+                                        <i class="fas fa-trophy text-warning me-2"></i>
+                                        <span class="fw-medium">{{ user.badges }} Achievement Badge{{ 's' if user.badges != 1 else '' }}</span>
+                                    </div>
+                                </div>
+                                <div class="col-sm-6">
+                                    <div class="insight-card p-3 bg-light rounded">
+                                        <i class="fas fa-target text-info me-2"></i>
+                                        <span class="fw-medium">{{ 5 - (user.questions_correct % 5) }} more for next badge</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-line text-muted display-1 mb-3"></i>
+                            <h5 class="text-muted mb-3">No progress data yet</h5>
+                            <p class="text-muted mb-4">Start answering questions to see your progress here!</p>
+                            <a href="{{ url_for('get_question') }}" class="btn btn-primary">
+                                <i class="fas fa-play me-2"></i>Answer Your First Question
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Achievements Section -->
+        <div class="col-lg-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white border-bottom">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-trophy text-warning me-2"></i>Achievements
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% if user.badges > 0 %}
+                        <div class="achievements-grid">
+                            {% for i in range(user.badges) %}
+                                <div class="achievement-badge earned mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="badge-icon me-3">
+                                            <i class="fas fa-medal text-warning fs-3"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="fw-bold mb-1">Excellence Badge</h6>
+                                            <small class="text-muted">{{ 5 * (i + 1) }} correct answers</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+
+                    <!-- Next Badge Progress -->
+                    {% set next_badge_target = ((user.questions_correct // 5) + 1) * 5 %}
+                    {% set progress_to_next = user.questions_correct % 5 %}
+                    
+                    <div class="next-badge mt-3">
+                        <h6 class="fw-bold mb-3">Next Achievement</h6>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="fas fa-medal text-muted me-3 fs-3"></i>
+                            <div class="flex-grow-1">
+                                <div class="d-flex justify-content-between mb-1">
+                                    <span class="fw-medium">Excellence Badge</span>
+                                    <span class="text-muted">{{ progress_to_next }}/5</span>
+                                </div>
+                                <div class="progress" style="height: 6px;">
+                                    <div class="progress-bar bg-warning" style="width: {{ (progress_to_next / 5) * 100 }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <small class="text-muted">{{ 5 - progress_to_next }} more correct answers needed</small>
+                    </div>
+
+                    {% if user.questions_attempted == 0 %}
+                        <div class="text-center py-4">
+                            <i class="fas fa-trophy text-muted display-4 mb-3"></i>
+                            <p class="text-muted mb-3">Earn your first badge!</p>
+                            <small class="text-muted">Answer 5 questions correctly to unlock your first achievement badge.</small>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="quick-actions-card bg-light p-4 rounded-3">
+                <h5 class="fw-bold mb-3">
+                    <i class="fas fa-bolt text-primary me-2"></i>Quick Actions
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-4">
+                        <a href="{{ url_for('get_question') }}" class="btn btn-primary w-100">
+                            <i class="fas fa-play me-2"></i>New Question
+                        </a>
+                    </div>
+                    <div class="col-md-4">
+                        <button class="btn btn-outline-primary w-100" onclick="location.reload()">
+                            <i class="fas fa-sync-alt me-2"></i>Refresh Stats
+                        </button>
+                    </div>
+                    <div class="col-md-4">
+                        <a href="{{ url_for('student_dashboard') }}" class="btn btn-outline-secondary w-100">
+                            <i class="fas fa-home me-2"></i>Dashboard
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends "base.html" %}
+
+{% block title %}Access Denied - IntelliTutor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-6 text-center">
+            <div class="error-page">
+                <div class="error-icon mb-4">
+                    <i class="fas fa-shield-alt text-danger" style="font-size: 6rem;"></i>
+                </div>
+                
+                <h1 class="display-1 fw-bold text-danger mb-3">403</h1>
+                <h2 class="h3 fw-bold text-dark mb-4">Access Denied</h2>
+                
+                <p class="lead text-muted mb-4">
+                    Sorry, you don't have permission to access this page. 
+                    Please make sure you're logged in with the correct account.
+                </p>
+                
+                <div class="error-actions">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.role == 'admin' %}
+                            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-tachometer-alt me-2"></i>Go to Admin Dashboard
+                            </a>
+                        {% else %}
+                            <a href="{{ url_for('student_dashboard') }}" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-chart-line me-2"></i>Go to Dashboard
+                            </a>
+                        {% endif %}
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>Go Home
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('replit_auth.login') }}" class="btn btn-primary btn-lg me-3">
+                            <i class="fas fa-sign-in-alt me-2"></i>Login
+                        </a>
+                        <a href="{{ url_for('index') }}" class="btn btn-outline-secondary btn-lg">
+                            <i class="fas fa-home me-2"></i>Go Home
+                        </a>
+                    {% endif %}
+                </div>
+                
+                <div class="mt-5">
+                    <p class="text-muted">
+                        <i class="fas fa-question-circle me-2"></i>
+                        Need help? Contact your administrator or try logging in again.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.error-page {
+    padding: 2rem;
+}
+
+.error-icon {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+    100% {
+        transform: scale(1);
+    }
+}
+
+.error-actions .btn {
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: all 0.3s ease;
+}
+
+.error-actions .btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+</style>
+{% endblock %}

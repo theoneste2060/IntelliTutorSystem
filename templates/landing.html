@@ -1,0 +1,157 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome to IntelliTutor{% endblock %}
+
+{% block content %}
+<!-- Hero Section -->
+<section class="hero-section bg-primary-gradient text-white py-5">
+    <div class="container">
+        <div class="row align-items-center min-vh-75">
+            <div class="col-lg-6">
+                <div class="hero-content">
+                    <h1 class="display-4 fw-bold mb-4">
+                        Master Any Subject with 
+                        <span class="text-accent">AI-Powered</span> Tutoring
+                    </h1>
+                    <p class="lead mb-4">
+                        Experience personalized learning with instant feedback, progress tracking, 
+                        and adaptive questioning designed to help you excel in your studies.
+                    </p>
+                    <div class="hero-buttons">
+                        <a href="{{ url_for('replit_auth.login') }}" class="btn btn-light btn-lg me-3">
+                            <i class="fas fa-rocket me-2"></i>Start Learning Now
+                        </a>
+                        <a href="#features" class="btn btn-outline-light btn-lg">
+                            <i class="fas fa-info-circle me-2"></i>Learn More
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="col-lg-6">
+                <div class="hero-image text-center">
+                    <i class="fas fa-brain display-1 text-accent mb-3"></i>
+                    <div class="feature-icons">
+                        <i class="fas fa-chart-line text-light"></i>
+                        <i class="fas fa-star text-accent"></i>
+                        <i class="fas fa-graduation-cap text-light"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Features Section -->
+<section id="features" class="py-5">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-primary">Why Choose IntelliTutor?</h2>
+                <p class="lead text-muted">Discover the features that make learning effective and engaging</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="feature-card text-center h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-robot text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">AI-Powered Scoring</h4>
+                    <p class="text-muted">
+                        Get instant, intelligent feedback on your answers with our advanced AI scoring system 
+                        that understands context and provides detailed explanations.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card text-center h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Progress Tracking</h4>
+                    <p class="text-muted">
+                        Monitor your learning journey with detailed analytics, performance metrics, 
+                        and achievement badges to keep you motivated.
+                    </p>
+                </div>
+            </div>
+            
+            <div class="col-md-4">
+                <div class="feature-card text-center h-100">
+                    <div class="feature-icon">
+                        <i class="fas fa-books text-primary"></i>
+                    </div>
+                    <h4 class="fw-bold mb-3">Multiple Subjects</h4>
+                    <p class="text-muted">
+                        Access questions across Mathematics, Science, English, History, and more. 
+                        Organized by topics for focused learning.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- How It Works Section -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center mb-5">
+                <h2 class="display-5 fw-bold text-primary">How It Works</h2>
+                <p class="lead text-muted">Simple steps to accelerate your learning</p>
+            </div>
+        </div>
+        
+        <div class="row g-4">
+            <div class="col-md-3">
+                <div class="step-card text-center">
+                    <div class="step-number">1</div>
+                    <h5 class="fw-bold mb-3">Login & Start</h5>
+                    <p class="text-muted">Sign in with your account and access your personalized dashboard</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="step-card text-center">
+                    <div class="step-number">2</div>
+                    <h5 class="fw-bold mb-3">Answer Questions</h5>
+                    <p class="text-muted">Solve questions one at a time with our focused learning approach</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="step-card text-center">
+                    <div class="step-number">3</div>
+                    <h5 class="fw-bold mb-3">Get Feedback</h5>
+                    <p class="text-muted">Receive instant AI-powered scoring and detailed explanations</p>
+                </div>
+            </div>
+            
+            <div class="col-md-3">
+                <div class="step-card text-center">
+                    <div class="step-number">4</div>
+                    <h5 class="fw-bold mb-3">Track Progress</h5>
+                    <p class="text-muted">Monitor improvement and earn badges for your achievements</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center">
+                <h2 class="display-5 fw-bold mb-4">Ready to Excel in Your Studies?</h2>
+                <p class="lead mb-4">Join thousands of students who are already improving their grades with IntelliTutor</p>
+                <a href="{{ url_for('replit_auth.login') }}" class="btn btn-light btn-lg">
+                    <i class="fas fa-sign-in-alt me-2"></i>Get Started Now - It's Free!
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+{% endblock %}
