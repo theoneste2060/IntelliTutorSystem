@@ -1,0 +1,122 @@
+{% extends "base.html" %}
+
+{% block title %}Login - IntelliTutor{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-5">
+            <div class="card shadow-lg border-0">
+                <div class="card-header bg-primary-gradient text-white text-center py-4">
+                    <h3 class="fw-bold mb-0">
+                        <i class="fas fa-graduation-cap me-2"></i>Welcome to IntelliTutor
+                    </h3>
+                    <p class="mb-0 opacity-90">Sign in to continue learning</p>
+                </div>
+                
+                <div class="card-body p-5">
+                    <form method="POST" class="needs-validation" novalidate>
+                        <div class="mb-4">
+                            <label for="username" class="form-label fw-medium">Username</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-user text-primary"></i>
+                                </span>
+                                <input type="text" class="form-control form-control-lg" id="username" 
+                                       name="username" placeholder="Enter your username" required autofocus>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please provide a valid username.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="password" class="form-label fw-medium">Password</label>
+                            <div class="input-group">
+                                <span class="input-group-text bg-light">
+                                    <i class="fas fa-lock text-primary"></i>
+                                </span>
+                                <input type="password" class="form-control form-control-lg" id="password" 
+                                       name="password" placeholder="Enter your password" required>
+                            </div>
+                            <div class="invalid-feedback">
+                                Please provide your password.
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mb-4">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-sign-in-alt me-2"></i>Sign In
+                            </button>
+                        </div>
+                    </form>
+                    
+                    <div class="text-center">
+                        <p class="text-muted mb-3">Don't have an account?</p>
+                        <a href="{{ url_for('auth.register') }}" class="btn btn-outline-primary">
+                            <i class="fas fa-user-plus me-2"></i>Create Account
+                        </a>
+                    </div>
+                </div>
+                
+                <div class="card-footer bg-light text-center py-3">
+                    <small class="text-muted">
+                        <i class="fas fa-shield-alt me-1"></i>
+                        Secure login powered by IntelliTutor
+                    </small>
+                </div>
+            </div>
+            
+            <!-- Demo Accounts Info -->
+            <div class="card mt-4 bg-light border-0">
+                <div class="card-body text-center">
+                    <h6 class="fw-bold text-primary mb-3">Demo Accounts</h6>
+                    <div class="row g-3">
+                        <div class="col-md-6">
+                            <div class="demo-account p-3 bg-white rounded border">
+                                <h6 class="fw-bold text-success mb-2">Student Account</h6>
+                                <p class="small mb-1"><strong>Username:</strong> student</p>
+                                <p class="small mb-0"><strong>Password:</strong> student123</p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="demo-account p-3 bg-white rounded border">
+                                <h6 class="fw-bold text-warning mb-2">Admin Account</h6>
+                                <p class="small mb-1"><strong>Username:</strong> admin</p>
+                                <p class="small mb-0"><strong>Password:</strong> admin123</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Auto-fill demo accounts
+function fillDemoAccount(username, password) {
+    document.getElementById('username').value = username;
+    document.getElementById('password').value = password;
+}
+
+// Add click handlers to demo accounts
+document.addEventListener('DOMContentLoaded', function() {
+    const demoAccounts = document.querySelectorAll('.demo-account');
+    demoAccounts.forEach(account => {
+        account.style.cursor = 'pointer';
+        account.addEventListener('click', function() {
+            const username = this.querySelector('p:first-of-type').textContent.split(': ')[1];
+            const password = this.querySelector('p:last-of-type').textContent.split(': ')[1];
+            fillDemoAccount(username, password);
+            
+            // Add visual feedback
+            this.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.style.transform = 'scale(1)';
+            }, 150);
+        });
+    });
+});
+</script>
+{% endblock %}

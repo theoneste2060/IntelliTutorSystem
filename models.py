@@ -1,18 +1,17 @@
 from datetime import datetime
 from app import db
-from flask_dance.consumer.storage.sqla import OAuthConsumerMixin
 from flask_login import UserMixin
-from sqlalchemy import UniqueConstraint
+from werkzeug.security import generate_password_hash, check_password_hash
 
-# (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
-    id = db.Column(db.String, primary_key=True)
-    email = db.Column(db.String, unique=True, nullable=True)
-    first_name = db.Column(db.String, nullable=True)
-    last_name = db.Column(db.String, nullable=True)
-    profile_image_url = db.Column(db.String, nullable=True)
-    role = db.Column(db.String, default='student')  # 'student' or 'admin'
+    id = db.Column(db.Integer, primary_key=True)
+    username = db.Column(db.String(80), unique=True, nullable=False)
+    email = db.Column(db.String(120), unique=True, nullable=False)
+    password_hash = db.Column(db.String(256), nullable=False)
+    first_name = db.Column(db.String(50), nullable=True)
+    last_name = db.Column(db.String(50), nullable=True)
+    role = db.Column(db.String(20), default='student')  # 'student' or 'admin'
     questions_attempted = db.Column(db.Integer, default=0)
     questions_correct = db.Column(db.Integer, default=0)
     total_score = db.Column(db.Integer, default=0)
@@ -20,19 +19,17 @@ class User(UserMixin, db.Model):
     
     created_at = db.Column(db.DateTime, default=datetime.now)
     updated_at = db.Column(db.DateTime, default=datetime.now, onupdate=datetime.now)
-
-# (IMPORTANT) This table is mandatory for Replit Auth, don't drop it.
-class OAuth(OAuthConsumerMixin, db.Model):
-    user_id = db.Column(db.String, db.ForeignKey(User.id))
-    browser_session_key = db.Column(db.String, nullable=False)
-    user = db.relationship(User)
-
-    __table_args__ = (UniqueConstraint(
-        'user_id',
-        'browser_session_key',
-        'provider',
-        name='uq_user_browser_session_key_provider',
-    ),)
+    
+    def set_password(self, password):
+        """Set password hash for the user"""
+        self.password_hash = generate_password_hash(password)
+    
+    def check_password(self, password):
+        """Check if provided password matches hash"""
+        return check_password_hash(self.password_hash, password)
+    
+    def __repr__(self):
+        return f'<User {self.username}>'
 
 class Question(db.Model):
     __tablename__ = 'questions'

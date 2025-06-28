@@ -29,12 +29,8 @@
                     {% if current_user.is_authenticated %}
                         <li class="nav-item dropdown">
                             <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
-                                {% if current_user.profile_image_url %}
-                                    <img src="{{ current_user.profile_image_url }}" alt="Profile" class="rounded-circle me-2" width="30" height="30" style="object-fit: cover;">
-                                {% else %}
-                                    <i class="fas fa-user-circle me-2 fs-4"></i>
-                                {% endif %}
-                                {{ current_user.first_name or current_user.email or 'User' }}
+                                <i class="fas fa-user-circle me-2 fs-4"></i>
+                                {{ current_user.first_name or current_user.username or 'User' }}
                                 {% if current_user.role == 'admin' %}
                                     <span class="badge bg-warning text-dark ms-2">Admin</span>
                                 {% endif %}
@@ -50,14 +46,14 @@
                                     </a></li>
                                 {% endif %}
                                 <li><hr class="dropdown-divider"></li>
-                                <li><a class="dropdown-item" href="{{ url_for('replit_auth.logout') }}">
+                                <li><a class="dropdown-item" href="{{ url_for('auth.logout') }}">
                                     <i class="fas fa-sign-out-alt me-2"></i>Logout
                                 </a></li>
                             </ul>
                         </li>
                     {% else %}
                         <li class="nav-item">
-                            <a class="btn btn-primary" href="{{ url_for('replit_auth.login') }}">
+                            <a class="btn btn-primary" href="{{ url_for('auth.login') }}">
                                 <i class="fas fa-sign-in-alt me-2"></i>Login
                             </a>
                         </li>

@@ -1,7 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session
 from flask_login import current_user
 from app import app, db
-from replit_auth import require_login, make_replit_blueprint
+from auth import auth_bp, require_login, require_admin
 from models import User, Question, Answer
 from data_store import (
     get_random_question, 
@@ -14,8 +14,8 @@ from data_store import (
 )
 import random
 
-# Register the Replit Auth blueprint
-app.register_blueprint(make_replit_blueprint(), url_prefix="/auth")
+# Register the auth blueprint
+app.register_blueprint(auth_bp, url_prefix="/auth")
 
 # Make session permanent
 @app.before_request
@@ -95,13 +95,12 @@ def submit_answer():
     feedback = scoring_result['feedback']
     
     # Save answer to database
-    answer = Answer(
-        user_id=current_user.id,
-        question_id=question_id,
-        user_answer=user_answer,
-        score=score,
-        feedback=feedback
-    )
+    answer = Answer()
+    answer.user_id = current_user.id
+    answer.question_id = question_id
+    answer.user_answer = user_answer
+    answer.score = score
+    answer.feedback = feedback
     db.session.add(answer)
     
     # Update user statistics
@@ -122,12 +121,9 @@ def submit_answer():
                          feedback=feedback)
 
 @app.route('/admin/dashboard')
-@require_login
+@require_admin
 def admin_dashboard():
     """Admin dashboard for managing questions and viewing statistics"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('student_dashboard'))
     
     # Get all subjects and their question counts
     subjects = get_all_subjects()
@@ -155,12 +151,9 @@ def admin_dashboard():
                          sample_questions=SAMPLE_QUESTIONS)
 
 @app.route('/admin/upload', methods=['POST'])
-@require_login
+@require_admin
 def upload_exam():
     """Mock PDF upload functionality (UI only)"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('student_dashboard'))
     
     if 'exam_file' not in request.files:
         flash('No file selected.', 'warning')
@@ -171,7 +164,7 @@ def upload_exam():
         flash('No file selected.', 'warning')
         return redirect(url_for('admin_dashboard'))
     
-    if file and file.filename.lower().endswith('.pdf'):
+    if file and file.filename and file.filename.lower().endswith('.pdf'):
         # Mock processing - in a real system, this would process the PDF
         flash(f'Mock: PDF "{file.filename}" uploaded successfully! In a real system, this would be processed to extract questions.', 'success')
     else:
@@ -180,25 +173,22 @@ def upload_exam():
     return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/set_role/<user_id>/<role>')
-@require_login
+@require_admin
 def set_user_role(user_id, role):
     """Set a user's role (admin function)"""
-    if current_user.role != 'admin':
-        flash('Access denied. Admin privileges required.', 'error')
-        return redirect(url_for('student_dashboard'))
     
     if role not in ['student', 'admin']:
         flash('Invalid role specified.', 'error')
         return redirect(url_for('admin_dashboard'))
     
-    user = User.query.get(user_id)
+    user = User.query.get(int(user_id))
     if not user:
         flash('User not found.', 'error')
         return redirect(url_for('admin_dashboard'))
     
     user.role = role
     db.session.commit()
-    flash(f'User {user.first_name or user.email} role updated to {role}.', 'success')
+    flash(f'User {user.first_name or user.username} role updated to {role}.', 'success')
     
     return redirect(url_for('admin_dashboard'))
 
