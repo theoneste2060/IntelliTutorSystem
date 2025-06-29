@@ -164,9 +164,14 @@
                                         </div>
                                     </div>
                                     <div class="col-md-6 text-md-end">
-                                        <button class="btn btn-outline-primary btn-sm">
-                                            <i class="fas fa-plus me-1"></i>Add Question
-                                        </button>
+                                        <div class="btn-group">
+                                            <a href="{{ url_for('add_question') }}" class="btn btn-outline-primary btn-sm">
+                                                <i class="fas fa-plus me-1"></i>Add Question
+                                            </a>
+                                            <a href="{{ url_for('admin_analytics') }}" class="btn btn-outline-info btn-sm">
+                                                <i class="fas fa-chart-bar me-1"></i>Analytics
+                                            </a>
+                                        </div>
                                     </div>
                                 </div>
 

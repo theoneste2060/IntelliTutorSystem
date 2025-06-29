@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+
+{% block title %}Add Question - IntelliTutor Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold text-primary mb-1">
+                        <i class="fas fa-plus-circle me-2"></i>Add New Question
+                    </h2>
+                    <p class="text-muted mb-0">Create a new question manually with model answer</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Add Question Form -->
+    <div class="row">
+        <div class="col-lg-10 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-form me-2"></i>Question Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <!-- Subject -->
+                            <div class="col-md-6">
+                                <label for="subject" class="form-label fw-semibold">Subject</label>
+                                <select class="form-select" id="subject" name="subject" required>
+                                    <option value="">Select Subject</option>
+                                    {% for subj in subjects %}
+                                    <option value="{{ subj }}">{{ subj }}</option>
+                                    {% endfor %}
+                                    <option value="Mathematics">Mathematics</option>
+                                    <option value="Science">Science</option>
+                                    <option value="English">English</option>
+                                    <option value="Construction">Construction</option>
+                                    <option value="Masonry">Masonry</option>
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Topic -->
+                            <div class="col-md-6">
+                                <label for="topic" class="form-label fw-semibold">Topic</label>
+                                <input type="text" class="form-control" id="topic" name="topic" 
+                                       placeholder="Enter topic (e.g., Algebra, Safety Procedures)" required>
+                            </div>
+
+                            <!-- Difficulty -->
+                            <div class="col-md-6">
+                                <label for="difficulty" class="form-label fw-semibold">Difficulty Level</label>
+                                <select class="form-select" id="difficulty" name="difficulty" required>
+                                    <option value="">Select Difficulty</option>
+                                    <option value="easy">Easy</option>
+                                    <option value="medium">Medium</option>
+                                    <option value="hard">Hard</option>
+                                </select>
+                            </div>
+
+                            <!-- Question Text -->
+                            <div class="col-12">
+                                <label for="question_text" class="form-label fw-semibold">Question Text</label>
+                                <textarea class="form-control" id="question_text" name="question_text" 
+                                          rows="6" placeholder="Enter the complete question text..." required></textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Write clear, concise questions that test specific learning objectives.
+                                </div>
+                            </div>
+
+                            <!-- Model Answer -->
+                            <div class="col-12">
+                                <label for="model_answer" class="form-label fw-semibold">Model Answer</label>
+                                <textarea class="form-control" id="model_answer" name="model_answer" 
+                                          rows="8" placeholder="Enter the comprehensive model answer..." required></textarea>
+                                <div class="form-text">
+                                    <i class="fas fa-lightbulb me-1"></i>
+                                    Provide detailed answers that will be used for AI comparison and scoring.
+                                </div>
+                            </div>
+
+                            <!-- Preview Section -->
+                            <div class="col-12">
+                                <div class="alert alert-info border-0">
+                                    <div class="row align-items-center">
+                                        <div class="col-2 text-center">
+                                            <i class="fas fa-eye fa-2x text-primary"></i>
+                                        </div>
+                                        <div class="col-10">
+                                            <h6 class="fw-bold mb-1">Question Preview</h6>
+                                            <p class="mb-0 small">Students will see the question text and submit their answers for AI evaluation against your model answer.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-12">
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary btn-lg">
+                                        <i class="fas fa-save me-2"></i>Add Question
+                                    </button>
+                                    <button type="button" class="btn btn-outline-secondary btn-lg" onclick="clearForm()">
+                                        <i class="fas fa-eraser me-2"></i>Clear Form
+                                    </button>
+                                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-light btn-lg">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    color: #0066cc;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid #e3f2fd;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0066cc, #004499);
+    border: none;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+
+.alert-info {
+    background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+    border-radius: 10px;
+}
+</style>
+
+<script>
+function clearForm() {
+    if (confirm('Are you sure you want to clear all form data?')) {
+        document.querySelector('form').reset();
+    }
+}
+
+// Auto-resize textareas
+document.addEventListener('DOMContentLoaded', function() {
+    const textareas = document.querySelectorAll('textarea');
+    textareas.forEach(textarea => {
+        textarea.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = (this.scrollHeight) + 'px';
+        });
+    });
+});
+</script>
+{% endblock %}

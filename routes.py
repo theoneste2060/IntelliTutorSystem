@@ -688,6 +688,216 @@ def set_user_role(user_id, role):
     
     return redirect(url_for('admin_dashboard'))
 
+@app.route('/admin/question/add', methods=['GET', 'POST'])
+@require_admin
+def add_question():
+    """Add a new question manually"""
+    if request.method == 'POST':
+        # Create new question from form data
+        question = Question()
+        question.subject = request.form.get('subject')
+        question.topic = request.form.get('topic')
+        question.question_text = request.form.get('question_text')
+        question.model_answer = request.form.get('model_answer')
+        question.difficulty = request.form.get('difficulty')
+        
+        try:
+            db.session.add(question)
+            db.session.commit()
+            flash(f'Question added successfully with ID #{question.id}.', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding question: {str(e)}', 'error')
+    
+    return render_template('admin_add_question.html', 
+                         subjects=get_all_subjects_from_db())
+
+@app.route('/admin/analytics')
+@require_admin
+def admin_analytics():
+    """Display comprehensive analytics dashboard"""
+    # Question statistics
+    total_questions = Question.query.count()
+    questions_by_subject = db.session.query(Question.subject, db.func.count(Question.id)).group_by(Question.subject).all()
+    questions_by_difficulty = db.session.query(Question.difficulty, db.func.count(Question.id)).group_by(Question.difficulty).all()
+    
+    # User statistics
+    total_users = User.query.count()
+    active_students = User.query.filter_by(role='student').filter(User.questions_attempted > 0).count()
+    top_performers = User.query.filter_by(role='student').filter(User.questions_attempted > 0).order_by(
+        (User.questions_correct * 100.0 / User.questions_attempted).desc()
+    ).limit(10).all()
+    
+    # Answer statistics
+    total_answers = Answer.query.count()
+    avg_score = db.session.query(db.func.avg(Answer.score)).scalar() or 0
+    recent_activity = Answer.query.order_by(Answer.created_at.desc()).limit(20).all()
+    
+    # Performance trends
+    score_distribution = db.session.query(
+        db.case(
+            (Answer.score >= 90, '90-100'),
+            (Answer.score >= 80, '80-89'),
+            (Answer.score >= 70, '70-79'),
+            (Answer.score >= 60, '60-69'),
+            else_='Below 60'
+        ).label('score_range'),
+        db.func.count(Answer.id)
+    ).group_by('score_range').all()
+    
+    return render_template('admin_analytics.html',
+                         total_questions=total_questions,
+                         questions_by_subject=questions_by_subject,
+                         questions_by_difficulty=questions_by_difficulty,
+                         total_users=total_users,
+                         active_students=active_students,
+                         top_performers=top_performers,
+                         total_answers=total_answers,
+                         avg_score=round(avg_score, 1),
+                         recent_activity=recent_activity,
+                         score_distribution=score_distribution)
+
+@app.route('/admin/export')
+@require_admin
+def export_data():
+    """Export data in various formats"""
+    export_type = request.args.get('type', 'questions')
+    format_type = request.args.get('format', 'csv')
+    
+    if export_type == 'questions':
+        return export_questions(format_type)
+    elif export_type == 'answers':
+        return export_answers(format_type)
+    elif export_type == 'users':
+        return export_users(format_type)
+    else:
+        flash('Invalid export type.', 'error')
+        return redirect(url_for('admin_dashboard'))
+
+def export_questions(format_type='csv'):
+    """Export questions data"""
+    questions = Question.query.all()
+    
+    if format_type == 'csv':
+        from flask import make_response
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        writer.writerow(['ID', 'Subject', 'Topic', 'Question Text', 'Model Answer', 'Difficulty', 'Created At'])
+        
+        # Write data
+        for q in questions:
+            writer.writerow([
+                q.id,
+                q.subject,
+                q.topic,
+                q.question_text,
+                q.model_answer,
+                q.difficulty,
+                q.created_at.strftime('%Y-%m-%d %H:%M:%S') if q.created_at else ''
+            ])
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = 'attachment; filename=questions_export.csv'
+        return response
+    
+    elif format_type == 'json':
+        from flask import jsonify
+        questions_data = []
+        for q in questions:
+            questions_data.append({
+                'id': q.id,
+                'subject': q.subject,
+                'topic': q.topic,
+                'question_text': q.question_text,
+                'model_answer': q.model_answer,
+                'difficulty': q.difficulty,
+                'created_at': q.created_at.isoformat() if q.created_at else None
+            })
+        
+        from flask import make_response
+        import json
+        response = make_response(json.dumps(questions_data, indent=2))
+        response.headers['Content-Type'] = 'application/json'
+        response.headers['Content-Disposition'] = 'attachment; filename=questions_export.json'
+        return response
+
+def export_answers(format_type='csv'):
+    """Export answers and performance data"""
+    answers = Answer.query.join(User).join(Question).all()
+    
+    if format_type == 'csv':
+        from flask import make_response
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        writer.writerow(['Answer ID', 'Student Name', 'Question ID', 'Subject', 'Topic', 'User Answer', 'Score', 'Feedback', 'Date'])
+        
+        # Write data
+        for a in answers:
+            writer.writerow([
+                a.id,
+                a.user.username,
+                a.question_id,
+                a.question.subject,
+                a.question.topic,
+                a.user_answer,
+                a.score,
+                a.feedback,
+                a.created_at.strftime('%Y-%m-%d %H:%M:%S') if a.created_at else ''
+            ])
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = 'attachment; filename=answers_export.csv'
+        return response
+
+def export_users(format_type='csv'):
+    """Export user performance data"""
+    users = User.query.filter_by(role='student').all()
+    
+    if format_type == 'csv':
+        from flask import make_response
+        import csv
+        from io import StringIO
+        
+        output = StringIO()
+        writer = csv.writer(output)
+        
+        # Write headers
+        writer.writerow(['User ID', 'Username', 'Email', 'Questions Attempted', 'Questions Correct', 'Total Score', 'Average Score', 'Accuracy %'])
+        
+        # Write data
+        for u in users:
+            avg_score = u.total_score / u.questions_attempted if u.questions_attempted > 0 else 0
+            accuracy = (u.questions_correct * 100.0 / u.questions_attempted) if u.questions_attempted > 0 else 0
+            
+            writer.writerow([
+                u.id,
+                u.username,
+                u.email,
+                u.questions_attempted,
+                u.questions_correct,
+                u.total_score,
+                round(avg_score, 1),
+                round(accuracy, 1)
+            ])
+        
+        response = make_response(output.getvalue())
+        response.headers['Content-Type'] = 'text/csv'
+        response.headers['Content-Disposition'] = 'attachment; filename=users_export.csv'
+        return response
+
 @app.errorhandler(403)
 def forbidden(error):
     return render_template('403.html'), 403
