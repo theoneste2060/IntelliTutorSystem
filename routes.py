@@ -1,4 +1,7 @@
 from flask import render_template, request, redirect, url_for, flash, session
+import os
+import json
+import logging
 from flask_login import current_user
 from app import app, db
 from auth import auth_bp, require_login, require_admin
@@ -213,9 +216,26 @@ def upload_exam():
         result = exam_processor.process_pdf(filepath, exam_metadata)
         
         if result['success']:
-            # Store extracted questions in session for review
-            session['extracted_questions'] = result['questions']
-            session['extraction_metadata'] = result['metadata']
+            # Store extracted questions in temporary file (avoid session size limits)
+            import json
+            import tempfile
+            
+            temp_data = {
+                'questions': result['questions'],
+                'metadata': result['metadata'],
+                'user_id': current_user.id
+            }
+            
+            # Create temp directory if it doesn't exist
+            os.makedirs('temp_extractions', exist_ok=True)
+            
+            # Save to temporary file with user ID
+            temp_filename = f'temp_extractions/extraction_{current_user.id}.json'
+            with open(temp_filename, 'w') as f:
+                json.dump(temp_data, f)
+            
+            # Store just the filename in session
+            session['extraction_file'] = temp_filename
             
             flash(f'Successfully extracted {result["total_extracted"]} questions from "{file.filename}". Review and edit below.', 'success')
             return redirect(url_for('review_extracted_questions'))
@@ -231,8 +251,21 @@ def upload_exam():
 @require_admin
 def review_extracted_questions():
     """Review and edit extracted questions before saving"""
-    questions = session.get('extracted_questions', [])
-    metadata = session.get('extraction_metadata', {})
+    # Load questions from temporary file
+    extraction_file = session.get('extraction_file')
+    questions = []
+    metadata = {}
+    
+    if extraction_file and os.path.exists(extraction_file):
+        try:
+            import json
+            with open(extraction_file, 'r') as f:
+                temp_data = json.load(f)
+                if temp_data.get('user_id') == current_user.id:
+                    questions = temp_data.get('questions', [])
+                    metadata = temp_data.get('metadata', {})
+        except Exception as e:
+            logging.error(f"Error loading extraction file: {e}")
     
     if not questions:
         flash('No questions to review. Please upload an exam paper first.', 'warning')
@@ -247,7 +280,18 @@ def review_extracted_questions():
 @require_admin
 def save_extracted_questions():
     """Save selected and edited questions to database"""
-    questions = session.get('extracted_questions', [])
+    # Load questions from temporary file
+    extraction_file = session.get('extraction_file')
+    questions = []
+    
+    if extraction_file and os.path.exists(extraction_file):
+        try:
+            with open(extraction_file, 'r') as f:
+                temp_data = json.load(f)
+                if temp_data.get('user_id') == current_user.id:
+                    questions = temp_data.get('questions', [])
+        except Exception as e:
+            logging.error(f"Error loading extraction file: {e}")
     
     if not questions:
         flash('No questions to save. Please upload an exam paper first.', 'error')
@@ -276,9 +320,15 @@ def save_extracted_questions():
         
         if result['success']:
             flash(f'{result["message"]}', 'success')
-            # Clear session data
-            session.pop('extracted_questions', None)
-            session.pop('extraction_metadata', None)
+            # Clear temporary file and session data
+            extraction_file = session.get('extraction_file')
+            if extraction_file and os.path.exists(extraction_file):
+                try:
+                    os.remove(extraction_file)
+                except Exception as e:
+                    logging.error(f"Error removing temp file: {e}")
+            
+            session.pop('extraction_file', None)
         else:
             flash(f'Error saving questions: {result["error"]}', 'error')
         
