@@ -6,7 +6,7 @@ Handles PDF upload, question extraction, and NLP answer generation
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
-from enhanced_pdf_processor import EnhancedPDFProcessor
+from simplified_pdf_processor import SimplifiedPDFProcessor
 from models import Question, db
 import json
 import logging
@@ -19,7 +19,7 @@ class ExamProcessor:
     def __init__(self, upload_folder='uploads'):
         self.upload_folder = upload_folder
         self.allowed_extensions = {'pdf'}
-        self.pdf_extractor = EnhancedPDFProcessor()
+        self.pdf_extractor = SimplifiedPDFProcessor()
         
         # Create upload folder if it doesn't exist
         os.makedirs(upload_folder, exist_ok=True)
@@ -69,24 +69,24 @@ class ExamProcessor:
                 'questions': []
             }
     
-    def _convert_enhanced_question(self, enhanced_q, exam_metadata=None):
-        """Convert enhanced question format to our internal format"""
+    def _convert_enhanced_question(self, question_result, exam_metadata=None):
+        """Convert simplified question format to our internal format"""
         return {
-            'id': f"temp_{hash(enhanced_q.question_text)}",
+            'id': f"temp_{hash(question_result.question_text)}",
             'number': '',  # Will be set by admin
-            'text': enhanced_q.question_text,
-            'generated_answer': enhanced_q.model_answer,
-            'complexity': enhanced_q.difficulty,
-            'type': enhanced_q.question_type,
-            'marks': enhanced_q.marks,
-            'subject_keywords': [enhanced_q.subject, enhanced_q.topic],
-            'course': exam_metadata.get('course', enhanced_q.subject) if exam_metadata else enhanced_q.subject,
+            'text': question_result.question_text,
+            'generated_answer': question_result.model_answer,
+            'complexity': question_result.difficulty,
+            'type': question_result.question_type,
+            'marks': question_result.marks,
+            'subject_keywords': [question_result.subject, question_result.topic],
+            'course': exam_metadata.get('course', question_result.subject) if exam_metadata else question_result.subject,
             'level': exam_metadata.get('level', 'Level 5') if exam_metadata else 'Level 5',
-            'topic': enhanced_q.topic,
+            'topic': question_result.topic,
             'is_selected': True,
-            'needs_review': enhanced_q.confidence_score < 0.7,
-            'page_num': enhanced_q.page_num,
-            'confidence_score': enhanced_q.confidence_score
+            'needs_review': question_result.confidence_score < 0.7,
+            'page_num': question_result.page_num,
+            'confidence_score': question_result.confidence_score
         }
     
     def _enhance_question(self, question_data, exam_metadata=None):

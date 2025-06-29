@@ -108,11 +108,31 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 - **Static Assets**: CSS and JavaScript files served through Flask static routing
 - **Security Headers**: HTTPS URL generation support
 
+## Recent Changes
+
+### Enhanced PDF Processing System (June 29, 2025)
+- Migrated from Replit Agent to standard Replit environment
+- Fixed Flask session security configuration with proper secret key management
+- Corrected authentication routing issues (replit_auth.login → auth.login)
+- Implemented advanced PDF question extraction system using PyMuPDF and pdfplumber
+- Added intelligent question identification with confidence scoring
+- Created comprehensive answer generation using NLP techniques
+- Successfully tested with NESA exam paper - extracted 13 questions with high confidence
+- Enhanced question classification by subject, topic, difficulty, and marks
+- Integrated chunking and text analysis for robust PDF processing
+
+### System Architecture Updates
+- Added simplified_pdf_processor.py for efficient NESA exam processing
+- Enhanced exam_processor.py with modern question extraction capabilities
+- Improved error handling and logging throughout the PDF processing pipeline
+- Updated models to support enhanced question metadata and confidence scoring
+
 ## Changelog
 
 ```
 Changelog:
 - June 28, 2025. Initial setup
+- June 29, 2025. Enhanced PDF processing system with NLP capabilities
 ```
 
 ## User Preferences
