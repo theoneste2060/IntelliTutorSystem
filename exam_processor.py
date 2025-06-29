@@ -6,7 +6,7 @@ Handles PDF upload, question extraction, and NLP answer generation
 import os
 from werkzeug.utils import secure_filename
 from flask import current_app
-from pdf_processor import PDFQuestionExtractor
+from enhanced_pdf_processor import EnhancedPDFProcessor
 from models import Question, db
 import json
 import logging
@@ -19,7 +19,7 @@ class ExamProcessor:
     def __init__(self, upload_folder='uploads'):
         self.upload_folder = upload_folder
         self.allowed_extensions = {'pdf'}
-        self.pdf_extractor = PDFQuestionExtractor()
+        self.pdf_extractor = EnhancedPDFProcessor()
         
         # Create upload folder if it doesn't exist
         os.makedirs(upload_folder, exist_ok=True)
@@ -41,18 +41,13 @@ class ExamProcessor:
     def process_pdf(self, filepath, exam_metadata=None):
         """Process uploaded PDF and extract questions with NLP answers"""
         try:
-            # Extract text from PDF
-            text = self.pdf_extractor.extract_text_from_pdf(filepath)
-            if not text:
-                raise ValueError("Could not extract text from PDF")
+            # Use enhanced PDF processor to extract complete questions
+            extracted_questions = self.pdf_extractor.process_pdf(filepath)
             
-            # Extract questions with NLP-generated answers
-            extracted_questions = self.pdf_extractor.extract_questions(text)
-            
-            # Process and enhance questions
+            # Convert enhanced questions to our format
             processed_questions = []
             for q in extracted_questions:
-                processed_q = self._enhance_question(q, exam_metadata)
+                processed_q = self._convert_enhanced_question(q, exam_metadata)
                 processed_questions.append(processed_q)
             
             return {
@@ -61,8 +56,8 @@ class ExamProcessor:
                 'total_extracted': len(processed_questions),
                 'metadata': {
                     'original_file': os.path.basename(filepath),
-                    'text_length': len(text),
-                    'extraction_method': 'NLP-enhanced'
+                    'total_questions': len(extracted_questions),
+                    'extraction_method': 'Enhanced-NLP-chunking'
                 }
             }
             
@@ -73,6 +68,26 @@ class ExamProcessor:
                 'error': str(e),
                 'questions': []
             }
+    
+    def _convert_enhanced_question(self, enhanced_q, exam_metadata=None):
+        """Convert enhanced question format to our internal format"""
+        return {
+            'id': f"temp_{hash(enhanced_q.question_text)}",
+            'number': '',  # Will be set by admin
+            'text': enhanced_q.question_text,
+            'generated_answer': enhanced_q.model_answer,
+            'complexity': enhanced_q.difficulty,
+            'type': enhanced_q.question_type,
+            'marks': enhanced_q.marks,
+            'subject_keywords': [enhanced_q.subject, enhanced_q.topic],
+            'course': exam_metadata.get('course', enhanced_q.subject) if exam_metadata else enhanced_q.subject,
+            'level': exam_metadata.get('level', 'Level 5') if exam_metadata else 'Level 5',
+            'topic': enhanced_q.topic,
+            'is_selected': True,
+            'needs_review': enhanced_q.confidence_score < 0.7,
+            'page_num': enhanced_q.page_num,
+            'confidence_score': enhanced_q.confidence_score
+        }
     
     def _enhance_question(self, question_data, exam_metadata=None):
         """Enhance extracted question with additional metadata"""
