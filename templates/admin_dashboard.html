@@ -99,6 +99,38 @@
                     </div>
                 </div>
                 <div class="card-body">
+                    <!-- Search and Filter Section -->
+                    <div class="row mb-4">
+                        <div class="col-md-4">
+                            <div class="input-group">
+                                <span class="input-group-text"><i class="fas fa-search"></i></span>
+                                <input type="text" class="form-control" id="questionSearch" 
+                                       placeholder="Search questions..." onkeyup="filterQuestions()">
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="difficultyFilter" onchange="filterQuestions()">
+                                <option value="">All Difficulties</option>
+                                <option value="easy">Easy</option>
+                                <option value="medium">Medium</option>
+                                <option value="hard">Hard</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <select class="form-select" id="subjectFilter" onchange="filterQuestions()">
+                                <option value="">All Subjects</option>
+                                {% for subject in subjects %}
+                                <option value="{{ subject }}">{{ subject }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <button class="btn btn-outline-secondary w-100" onclick="clearFilters()">
+                                <i class="fas fa-times me-1"></i>Clear
+                            </button>
+                        </div>
+                    </div>
+
                     <!-- Subject Tabs -->
                     <ul class="nav nav-pills mb-4" id="subjectTabs">
                         {% for subject in subjects %}
@@ -142,7 +174,11 @@
                                 <div class="questions-list">
                                     {% if subject_stats[subject].questions %}
                                         {% for question in subject_stats[subject].questions %}
-                                            <div class="question-item border rounded p-3 mb-3">
+                                            <div class="question-item border rounded p-3 mb-3" 
+                                                 data-subject="{{ question.subject }}" 
+                                                 data-difficulty="{{ question.difficulty }}" 
+                                                 data-topic="{{ question.topic }}"
+                                                 data-question-text="{{ question.question_text|lower }}">
                                                 <div class="row align-items-start">
                                                     <div class="col-md-8">
                                                         <div class="d-flex align-items-center mb-2">
@@ -159,14 +195,14 @@
                                                         <div class="btn-group btn-group-sm">
                                                             <button class="btn btn-outline-primary" data-bs-toggle="modal" 
                                                                     data-bs-target="#viewQuestionModal{{ question.id }}" 
-                                                                    data-bs-toggle="tooltip" title="View">
+                                                                    title="View">
                                                                 <i class="fas fa-eye"></i>
                                                             </button>
                                                             <a href="{{ url_for('edit_question', question_id=question.id) }}" 
-                                                               class="btn btn-outline-warning" data-bs-toggle="tooltip" title="Edit">
+                                                               class="btn btn-outline-warning" title="Edit">
                                                                 <i class="fas fa-edit"></i>
                                                             </a>
-                                                            <button type="button" class="btn btn-outline-danger" onclick="deleteQuestion({{ question.id }})" title="Delete">
+                                                            <button type="button" class="btn btn-outline-danger" data-question-id="{{ question.id }}" title="Delete">
                                                                 <i class="fas fa-trash"></i>
                                                             </button>
                                                         </div>
@@ -344,6 +380,65 @@
         </div>
     </div>
 </div>
+
+<!-- View Question Modals -->
+{% for subject in subjects %}
+    {% if subject_stats[subject].questions %}
+        {% for question in subject_stats[subject].questions %}
+        <div class="modal fade" id="viewQuestionModal{{ question.id }}" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">
+                            <i class="fas fa-eye text-primary me-2"></i>Question #{{ question.id }}
+                        </h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Subject:</strong> {{ question.subject }}
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Topic:</strong> {{ question.topic }}
+                            </div>
+                        </div>
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <strong>Difficulty:</strong> 
+                                <span class="badge bg-{{ 'success' if question.difficulty == 'easy' else 'warning' if question.difficulty == 'medium' else 'danger' }}">
+                                    {{ question.difficulty.title() }}
+                                </span>
+                            </div>
+                            <div class="col-md-6">
+                                <strong>Created:</strong> {{ question.created_at }}
+                            </div>
+                        </div>
+                        <div class="mb-4">
+                            <strong>Question:</strong>
+                            <div class="border rounded p-3 mt-2 bg-light">
+                                {{ question.full_question_text if question.full_question_text else question.question_text }}
+                            </div>
+                        </div>
+                        <div class="mb-3">
+                            <strong>Model Answer:</strong>
+                            <div class="border rounded p-3 mt-2 bg-light">
+                                {{ question.model_answer if question.model_answer else 'Model answer not available for preview.' }}
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                        <a href="{{ url_for('edit_question', question_id=question.id) }}" class="btn btn-primary">
+                            <i class="fas fa-edit me-2"></i>Edit Question
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    {% endif %}
+{% endfor %}
 {% endblock %}
 
 {% block scripts %}
@@ -392,6 +487,113 @@ function deleteQuestion(questionId) {
         document.body.appendChild(form);
         form.submit();
     }
+}
+
+// Add event listeners for delete buttons
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle delete button clicks
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('[data-question-id]')) {
+            const button = e.target.closest('[data-question-id]');
+            const questionId = button.getAttribute('data-question-id');
+            deleteQuestion(questionId);
+        }
+    });
+});
+
+// Filter questions functionality
+function filterQuestions() {
+    const searchTerm = document.getElementById('questionSearch').value.toLowerCase();
+    const difficultyFilter = document.getElementById('difficultyFilter').value;
+    const subjectFilter = document.getElementById('subjectFilter').value;
+    
+    const questionItems = document.querySelectorAll('.question-item');
+    let visibleCount = 0;
+    
+    questionItems.forEach(item => {
+        const questionText = item.getAttribute('data-question-text') || '';
+        const subject = item.getAttribute('data-subject') || '';
+        const difficulty = item.getAttribute('data-difficulty') || '';
+        const topic = item.getAttribute('data-topic') || '';
+        
+        // Check search term match
+        const matchesSearch = !searchTerm || 
+            questionText.includes(searchTerm) || 
+            subject.toLowerCase().includes(searchTerm) ||
+            topic.toLowerCase().includes(searchTerm);
+        
+        // Check difficulty filter
+        const matchesDifficulty = !difficultyFilter || difficulty === difficultyFilter;
+        
+        // Check subject filter
+        const matchesSubject = !subjectFilter || subject === subjectFilter;
+        
+        // Show/hide item based on all filters
+        if (matchesSearch && matchesDifficulty && matchesSubject) {
+            item.style.display = 'block';
+            visibleCount++;
+        } else {
+            item.style.display = 'none';
+        }
+    });
+    
+    // Update empty state messages
+    updateEmptyStates(visibleCount);
+    
+    // Update subject tabs with filtered counts
+    updateSubjectTabCounts();
+}
+
+// Clear all filters
+function clearFilters() {
+    document.getElementById('questionSearch').value = '';
+    document.getElementById('difficultyFilter').value = '';
+    document.getElementById('subjectFilter').value = '';
+    filterQuestions();
+}
+
+// Update empty state messages based on filtered results
+function updateEmptyStates(visibleCount) {
+    const emptyStates = document.querySelectorAll('.questions-list');
+    
+    emptyStates.forEach(container => {
+        const questions = container.querySelectorAll('.question-item');
+        const visibleInContainer = Array.from(questions).filter(q => q.style.display !== 'none').length;
+        
+        let emptyMessage = container.querySelector('.empty-state-message');
+        
+        if (visibleInContainer === 0 && questions.length > 0) {
+            if (!emptyMessage) {
+                emptyMessage = document.createElement('div');
+                emptyMessage.className = 'text-center text-muted py-4 empty-state-message';
+                emptyMessage.innerHTML = `
+                    <i class="fas fa-search fa-3x mb-3 opacity-50"></i>
+                    <p class="mb-0">No questions match your current filters.</p>
+                    <p class="small">Try adjusting your search criteria.</p>
+                `;
+                container.appendChild(emptyMessage);
+            }
+            emptyMessage.style.display = 'block';
+        } else if (emptyMessage) {
+            emptyMessage.style.display = 'none';
+        }
+    });
+}
+
+// Update subject tab counts after filtering
+function updateSubjectTabCounts() {
+    const tabs = document.querySelectorAll('#subjectTabs .nav-link');
+    
+    tabs.forEach(tab => {
+        const tabPane = document.querySelector(tab.getAttribute('href'));
+        if (tabPane) {
+            const visibleQuestions = tabPane.querySelectorAll('.question-item[style*="display: block"], .question-item:not([style*="display: none"])').length;
+            const badge = tab.querySelector('.badge');
+            if (badge) {
+                badge.textContent = visibleQuestions;
+            }
+        }
+    });
 }
 </script>
 {% endblock %}

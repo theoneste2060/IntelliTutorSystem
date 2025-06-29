@@ -432,6 +432,8 @@ def admin_dashboard():
                 'subject': q.subject,
                 'topic': q.topic,
                 'question_text': q.question_text[:100] + '...' if len(q.question_text) > 100 else q.question_text,
+                'full_question_text': q.question_text,
+                'model_answer': q.model_answer,
                 'difficulty': q.difficulty,
                 'created_at': q.created_at.strftime('%Y-%m-%d') if q.created_at else 'Unknown'
             })
