@@ -59,18 +59,18 @@ class UserSessionStorage(BaseStorage):
             provider=blueprint.name).delete()
         db.session.commit()
 
-def make_replit_blueprint():
+def make_oauth_blueprint():
     try:
-        repl_id = os.environ['REPL_ID']
+        client_id = os.environ['OAUTH_CLIENT_ID']
     except KeyError:
-        raise SystemExit("the REPL_ID environment variable must be set")
+        raise SystemExit("the OAUTH_CLIENT_ID environment variable must be set")
 
-    issuer_url = os.environ.get('ISSUER_URL', "https://replit.com/oidc")
+    issuer_url = os.environ.get('ISSUER_URL', "https://auth.example.com/oidc")
 
-    replit_bp = OAuth2ConsumerBlueprint(
-        "replit_auth",
+    oauth_bp = OAuth2ConsumerBlueprint(
+        "oauth_auth",
         __name__,
-        client_id=repl_id,
+        client_id=client_id,
         client_secret=None,
         base_url=issuer_url,
         authorization_url_params={
@@ -83,7 +83,7 @@ def make_replit_blueprint():
         },
         auto_refresh_url=issuer_url + "/token",
         auto_refresh_kwargs={
-            "client_id": repl_id,
+            "client_id": client_id,
         },
         authorization_url=issuer_url + "/auth",
         use_pkce=True,
@@ -92,33 +92,33 @@ def make_replit_blueprint():
         storage=UserSessionStorage(),
     )
 
-    @replit_bp.before_app_request
+    @oauth_bp.before_app_request
     def set_applocal_session():
         if '_browser_session_key' not in session:
             session['_browser_session_key'] = uuid.uuid4().hex
         session.modified = True
         g.browser_session_key = session['_browser_session_key']
-        g.flask_dance_replit = replit_bp.session
+        g.flask_dance_oauth = oauth_bp.session
 
-    @replit_bp.route("/logout")
+    @oauth_bp.route("/logout")
     def logout():
-        del replit_bp.token
+        del oauth_bp.token
         logout_user()
 
         end_session_endpoint = issuer_url + "/session/end"
         encoded_params = urlencode({
-            "client_id": repl_id,
+            "client_id": client_id,
             "post_logout_redirect_uri": request.url_root,
         })
         logout_url = f"{end_session_endpoint}?{encoded_params}"
 
         return redirect(logout_url)
 
-    @replit_bp.route("/error")
+    @oauth_bp.route("/error")
     def error():
         return render_template("403.html"), 403
 
-    return replit_bp
+    return oauth_bp
 
 def save_user(user_claims):
     user = User()
@@ -146,26 +146,26 @@ def logged_in(blueprint, token):
 
 @oauth_error.connect
 def handle_error(blueprint, error, error_description=None, error_uri=None):
-    return redirect(url_for('replit_auth.error'))
+    return redirect(url_for('oauth_auth.error'))
 
 def require_login(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated:
             session["next_url"] = get_next_navigation_url(request)
-            return redirect(url_for('replit_auth.login'))
+            return redirect(url_for('oauth_auth.login'))
 
-        expires_in = replit.token.get('expires_in', 0)
+        expires_in = oauth.token.get('expires_in', 0)
         if expires_in < 0:
-            refresh_token_url = issuer_url + "/token"
+            refresh_token_url = os.environ.get('ISSUER_URL', "https://auth.example.com/oidc") + "/token"
             try:
-                token = replit.refresh_token(token_url=refresh_token_url,
-                                             client_id=os.environ['REPL_ID'])
+                token = oauth.refresh_token(token_url=refresh_token_url,
+                                             client_id=os.environ['OAUTH_CLIENT_ID'])
             except InvalidGrantError:
                 # If the refresh token is invalid, the users needs to re-login.
                 session["next_url"] = get_next_navigation_url(request)
-                return redirect(url_for('replit_auth.login'))
-            replit.token_updater(token)
+                return redirect(url_for('oauth_auth.login'))
+            oauth.token_updater(token)
 
         return f(*args, **kwargs)
 
@@ -179,4 +179,4 @@ def get_next_navigation_url(request):
         return request.url
     return request.referrer or request.url
 
-replit = LocalProxy(lambda: g.flask_dance_replit)
+oauth = LocalProxy(lambda: g.flask_dance_oauth)

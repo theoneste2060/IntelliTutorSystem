@@ -1,0 +1,78 @@
+# Generic Deployment Configuration
+# This file provides deployment instructions for various platforms
+
+version: '3.8'
+
+services:
+  web:
+    build: .
+    ports:
+      - "5000:5000"
+    environment:
+      - SESSION_SECRET=${SESSION_SECRET}
+      - DATABASE_URL=${DATABASE_URL}
+      - OAUTH_CLIENT_ID=${OAUTH_CLIENT_ID}
+      - ISSUER_URL=${ISSUER_URL}
+    command: gunicorn --bind 0.0.0.0:5000 main:app
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - db
+
+  db:
+    image: postgres:15
+    environment:
+      - POSTGRES_DB=intellitutor
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
+
+# Alternative deployment configurations:
+
+# 1. Heroku Procfile (create file named 'Procfile'):
+# web: gunicorn --bind 0.0.0.0:$PORT main:app
+
+# 2. Railway deployment:
+# No additional configuration needed, uses main:app automatically
+
+# 3. DigitalOcean App Platform (app.yaml):
+# name: intellitutor
+# services:
+# - name: web
+#   source_dir: /
+#   github:
+#     repo: your-username/intellitutor
+#     branch: main
+#   run_command: gunicorn --bind 0.0.0.0:$PORT main:app
+#   environment_slug: python
+#   instance_count: 1
+#   instance_size_slug: basic-xxs
+#   envs:
+#   - key: SESSION_SECRET
+#     value: your-secret-key
+#   - key: DATABASE_URL
+#     value: ${db.DATABASE_URL}
+
+# 4. Vercel deployment (vercel.json):
+# {
+#   "builds": [
+#     {
+#       "src": "main.py",
+#       "use": "@vercel/python"
+#     }
+#   ],
+#   "routes": [
+#     {
+#       "src": "/(.*)",
+#       "dest": "main.py"
+#     }
+#   ]
+# }
+
+# 5. AWS Elastic Beanstalk:
+# Use requirements.txt and main.py as entry point
+# Configure environment variables in EB console

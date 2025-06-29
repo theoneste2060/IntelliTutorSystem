@@ -51,7 +51,7 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 ## Data Flow
 
 ### Student Learning Flow
-1. User authenticates via Replit Auth
+1. User authenticates via OAuth provider
 2. Student dashboard displays current progress and statistics
 3. New question request retrieves random question from database
 4. Student submits answer through form interface
@@ -66,8 +66,8 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 4. Question management enables content administration
 
 ### Authentication Flow
-1. User initiates login through Replit Auth
-2. OAuth2 flow redirects to Replit for authentication
+1. User initiates login through OAuth provider
+2. OAuth2 flow redirects to OAuth provider for authentication
 3. User information is retrieved and stored locally
 4. Session is established with role-based permissions
 5. User is redirected to appropriate dashboard
@@ -87,7 +87,7 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 - **jQuery**: JavaScript utilities (implied by template structure)
 
 ### Infrastructure Dependencies
-- **Replit Auth**: External authentication provider
+- **OAuth Provider**: External authentication provider
 - **Database**: SQLite for development, PostgreSQL for production
 - **Environment Variables**: Session secrets and database configuration
 
@@ -111,9 +111,9 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 ## Recent Changes
 
 ### Enhanced PDF Processing System (June 29, 2025)
-- Migrated from Replit Agent to standard Replit environment
+- Migrated to standard cloud environment
 - Fixed Flask session security configuration with proper secret key management
-- Corrected authentication routing issues (replit_auth.login → auth.login)
+- Corrected authentication routing issues (oauth_auth.login → auth.login)
 - Implemented advanced PDF question extraction system using PyMuPDF and pdfplumber
 - Added intelligent question identification with confidence scoring
 - Created comprehensive answer generation using NLP techniques
@@ -176,6 +176,14 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 - Included deployment guides, security considerations, and troubleshooting sections
 - Added API endpoint documentation and database schema descriptions
 - Created complete project structure guide with file-by-file explanations
+
+### Platform Independence and Code Cleanup (June 29, 2025)
+- Removed all platform-specific references from codebase and documentation
+- Renamed authentication system from replit_auth.py to oauth_auth.py for generic OAuth integration
+- Updated environment variable configurations to be platform-agnostic
+- Created comprehensive Git authorship change guide (GIT_AUTHORSHIP_GUIDE.md)
+- Added generic deployment configuration (deployment.yml) supporting multiple platforms
+- Updated all documentation to reference generic OAuth providers instead of specific platforms
 
 ## Changelog
 

@@ -19,7 +19,7 @@ IntelliTutor is a comprehensive educational web application built with Flask tha
 ### Backend
 - **Framework**: Flask 2.x (Python web framework)
 - **Database**: SQLAlchemy ORM with SQLite/PostgreSQL support
-- **Authentication**: Replit Auth with OAuth2 integration
+- **Authentication**: OAuth2 integration with Flask-Dance
 - **Session Management**: Flask-Login for user session handling
 - **File Processing**: PyMuPDF, pdfplumber for PDF extraction
 - **NLP Libraries**: TextBlob, scikit-learn for intelligent scoring
@@ -33,7 +33,7 @@ IntelliTutor is a comprehensive educational web application built with Flask tha
 - **Charts**: Chart.js for analytics visualization
 
 ### Infrastructure
-- **Deployment**: Replit environment with automatic restart
+- **Deployment**: Cloud environment with automatic restart
 - **File Storage**: Local file system for PDF uploads
 - **Session Storage**: Flask sessions with permanent configuration
 - **Environment**: Environment variables for configuration
@@ -143,7 +143,7 @@ OAuth (id, provider, provider_id, provider_user_id, token,
 
 ```
 1. Authentication
-   User → Replit Auth → OAuth Token → User Session → Role Assignment
+   User → OAuth Provider → OAuth Token → User Session → Role Assignment
 
 2. Question Retrieval
    Student Dashboard → Database Query → Question Selection → Template Rendering
@@ -317,7 +317,8 @@ Delete → Confirm → Remove → Cleanup
 ```bash
 SESSION_SECRET=your-session-secret-key
 DATABASE_URL=sqlite:///instance/intellitutor.db  # or PostgreSQL URL
-REPLIT_DB_URL=your-replit-database-url  # if using Replit DB
+OAUTH_CLIENT_ID=your-oauth-client-id
+ISSUER_URL=https://your-oauth-provider.com/oidc
 ```
 
 ### Application Configuration
@@ -400,7 +401,7 @@ python reset_database.py
 ## Security Considerations
 
 ### Authentication Security
-- OAuth2 integration with trusted provider (Replit)
+- OAuth2 integration with trusted provider
 - Secure session management with encrypted cookies
 - Role-based access control with route protection
 - Password hashing using Werkzeug security
