@@ -117,14 +117,39 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 - Implemented advanced PDF question extraction system using PyMuPDF and pdfplumber
 - Added intelligent question identification with confidence scoring
 - Created comprehensive answer generation using NLP techniques
-- Successfully tested with NESA exam paper - extracted 13 questions with high confidence
+- Successfully tested with NESA exam paper - extracted 17 questions with proper numbering
 - Enhanced question classification by subject, topic, difficulty, and marks
 - Integrated chunking and text analysis for robust PDF processing
 
+### NESA-Specific Processing System (June 29, 2025)
+- Created specialized NESA PDF processor targeting numbered questions (01. through 21.)
+- Improved question extraction from 13 to 17 properly numbered questions
+- Implemented context-aware answer generation for construction technology topics
+- Added intelligent question type classification (definition, calculation, listing, comparison, matching, etc.)
+- Enhanced multiple choice and table detection for admin review
+- Successfully saved 17 NESA questions to database under Masonry and Scaffolding subjects
+
+### Intelligent AI Scoring System (June 29, 2025)
+- Replaced mock scoring with advanced NLP-based answer evaluation
+- Implemented text similarity analysis using TF-IDF and cosine similarity
+- Added concept coverage assessment using TextBlob for key phrase extraction
+- Created detailed feedback generation based on scoring components
+- Integrated construction-specific terminology recognition for accurate scoring
+- Enhanced difficulty-based score adjustment for fair evaluation
+
+### Database Integration Improvements (June 29, 2025)
+- Updated student interface to use database questions instead of sample data
+- Implemented intelligent question retrieval with subject/topic filtering
+- Enhanced answer storage with detailed scoring and feedback
+- Fixed session management for large question extractions using temporary files
+- Successfully integrated 17 NESA questions with existing sample questions (25 total)
+
 ### System Architecture Updates
-- Added simplified_pdf_processor.py for efficient NESA exam processing
+- Added nesa_pdf_processor.py for specialized NESA exam processing
 - Enhanced exam_processor.py with modern question extraction capabilities
+- Updated routes.py with intelligent scoring and database question retrieval
 - Improved error handling and logging throughout the PDF processing pipeline
+- Added comprehensive NLP libraries (TextBlob, scikit-learn) for intelligent scoring
 - Updated models to support enhanced question metadata and confidence scoring
 
 ## Changelog

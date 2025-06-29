@@ -18,6 +18,274 @@ from data_store import (
 )
 from exam_processor import exam_processor
 import random
+import re
+from textblob import TextBlob
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sklearn.metrics.pairwise import cosine_similarity
+
+# Database query helper functions
+def get_random_question_from_db():
+    """Get a random question from database, fallback to sample if none"""
+    questions = Question.query.all()
+    if questions:
+        question = random.choice(questions)
+        return {
+            'id': question.id,
+            'subject': question.subject,
+            'topic': question.topic,
+            'question_text': question.question_text,
+            'model_answer': question.model_answer,
+            'difficulty': question.difficulty
+        }
+    else:
+        # Fallback to sample questions if database is empty
+        return get_random_question()
+
+def get_all_subjects_from_db():
+    """Get all unique subjects from database"""
+    db_subjects = db.session.query(Question.subject).distinct().all()
+    if db_subjects:
+        subjects = [s[0] for s in db_subjects]
+        return subjects
+    else:
+        return get_all_subjects()
+
+def get_topics_by_subject_from_db(subject):
+    """Get topics for a specific subject from database"""
+    db_topics = Question.query.filter_by(subject=subject).with_entities(Question.topic).distinct().all()
+    if db_topics:
+        return [t[0] for t in db_topics]
+    else:
+        return get_topics_by_subject(subject)
+
+def get_random_question_by_filters_from_db(subject=None, topic=None):
+    """Get filtered random question from database"""
+    query = Question.query
+    
+    if subject:
+        query = query.filter_by(subject=subject)
+    if topic:
+        query = query.filter_by(topic=topic)
+    
+    questions = query.all()
+    if questions:
+        question = random.choice(questions)
+        return {
+            'id': question.id,
+            'subject': question.subject,
+            'topic': question.topic,
+            'question_text': question.question_text,
+            'model_answer': question.model_answer,
+            'difficulty': question.difficulty
+        }
+    else:
+        return get_random_question_by_filters(subject, topic)
+
+def get_question_by_id_from_db(question_id):
+    """Get specific question by ID from database"""
+    question = Question.query.get(question_id)
+    if question:
+        return {
+            'id': question.id,
+            'subject': question.subject,
+            'topic': question.topic,
+            'question_text': question.question_text,
+            'model_answer': question.model_answer,
+            'difficulty': question.difficulty
+        }
+    else:
+        return get_question_by_id(question_id)
+
+def intelligent_ai_score(user_answer, model_answer, question_difficulty='medium'):
+    """
+    Intelligent AI scoring using NLP techniques to compare student and model answers
+    """
+    try:
+        # Clean and normalize text
+        user_clean = clean_text(user_answer)
+        model_clean = clean_text(model_answer)
+        
+        if not user_clean or len(user_clean) < 5:
+            return {
+                'score': 0,
+                'feedback': 'Answer is too short or empty. Please provide a more detailed response.'
+            }
+        
+        # Calculate similarity score
+        similarity_score = calculate_text_similarity(user_clean, model_clean)
+        
+        # Extract key concepts from both answers
+        user_concepts = extract_key_concepts(user_clean)
+        model_concepts = extract_key_concepts(model_clean)
+        
+        # Calculate concept coverage
+        concept_coverage = calculate_concept_coverage(user_concepts, model_concepts)
+        
+        # Assess answer quality
+        quality_score = assess_answer_quality(user_clean)
+        
+        # Calculate final score (weighted combination)
+        final_score = int((similarity_score * 0.4 + concept_coverage * 0.4 + quality_score * 0.2) * 100)
+        
+        # Adjust for difficulty
+        if question_difficulty == 'easy' and final_score >= 60:
+            final_score = min(100, final_score + 5)
+        elif question_difficulty == 'hard' and final_score < 80:
+            final_score = max(50, final_score - 5)
+        
+        # Generate detailed feedback
+        feedback = generate_detailed_feedback(user_answer, model_answer, final_score, 
+                                           similarity_score, concept_coverage)
+        
+        return {
+            'score': max(0, min(100, final_score)),
+            'feedback': feedback
+        }
+        
+    except Exception as e:
+        logging.error(f"Error in intelligent scoring: {e}")
+        # Fallback to mock scoring
+        return mock_ai_score(user_answer, model_answer, question_difficulty)
+
+def clean_text(text):
+    """Clean and normalize text for comparison"""
+    if not text:
+        return ""
+    
+    # Remove extra whitespace and normalize
+    text = re.sub(r'\s+', ' ', text.strip())
+    
+    # Convert to lowercase
+    text = text.lower()
+    
+    # Remove special characters but keep basic punctuation
+    text = re.sub(r'[^\w\s\.\,\!\?\:\;]', '', text)
+    
+    return text
+
+def calculate_text_similarity(text1, text2):
+    """Calculate semantic similarity between two texts using TF-IDF"""
+    try:
+        vectorizer = TfidfVectorizer(stop_words='english', ngram_range=(1, 2))
+        tfidf_matrix = vectorizer.fit_transform([text1, text2])
+        similarity = cosine_similarity(tfidf_matrix[0:1], tfidf_matrix[1:2])[0][0]
+        return similarity
+    except:
+        # Fallback to simple word overlap
+        words1 = set(text1.split())
+        words2 = set(text2.split())
+        intersection = words1.intersection(words2)
+        union = words1.union(words2)
+        return len(intersection) / len(union) if union else 0
+
+def extract_key_concepts(text):
+    """Extract key concepts from text using TextBlob"""
+    try:
+        blob = TextBlob(text)
+        # Get noun phrases as key concepts
+        concepts = set()
+        
+        # Add noun phrases
+        try:
+            for phrase in blob.noun_phrases:
+                if len(phrase) > 2:  # Filter out very short phrases
+                    concepts.add(phrase.lower())
+        except:
+            pass
+        
+        # Add important single words (nouns, adjectives)
+        try:
+            for word, tag in blob.tags:
+                if tag in ['NN', 'NNS', 'NNP', 'NNPS', 'JJ', 'JJR', 'JJS'] and len(word) > 3:
+                    concepts.add(word.lower())
+        except:
+            pass
+        
+        return concepts
+    except:
+        # Fallback to simple word extraction
+        words = text.split()
+        return set(word.lower() for word in words if len(word) > 3)
+
+def calculate_concept_coverage(user_concepts, model_concepts):
+    """Calculate how well user answer covers model answer concepts"""
+    if not model_concepts:
+        return 0.8  # Give benefit of doubt if no model concepts
+    
+    if not user_concepts:
+        return 0.0
+    
+    # Count matches
+    matches = 0
+    for model_concept in model_concepts:
+        for user_concept in user_concepts:
+            # Check for exact match or partial match
+            if model_concept == user_concept or model_concept in user_concept or user_concept in model_concept:
+                matches += 1
+                break
+    
+    coverage = matches / len(model_concepts)
+    return min(1.0, coverage)  # Cap at 1.0
+
+def assess_answer_quality(text):
+    """Assess overall quality of the answer"""
+    score = 0.5  # Base score
+    
+    # Length-based scoring
+    word_count = len(text.split())
+    if word_count >= 20:
+        score += 0.2
+    elif word_count >= 10:
+        score += 0.1
+    
+    # Structure indicators
+    if '.' in text or '!' in text or '?' in text:
+        score += 0.1  # Has sentences
+    
+    if any(word in text.lower() for word in ['first', 'second', 'third', 'finally', 'therefore', 'because']):
+        score += 0.1  # Has structure words
+    
+    # Technical indicators for construction topics
+    construction_terms = ['construction', 'building', 'scaffold', 'brick', 'mortar', 'foundation', 
+                         'safety', 'material', 'structure', 'tool', 'equipment']
+    if any(term in text.lower() for term in construction_terms):
+        score += 0.1  # Contains relevant terminology
+    
+    return min(1.0, score)
+
+def generate_detailed_feedback(user_answer, model_answer, score, similarity, coverage):
+    """Generate detailed feedback based on scoring components"""
+    feedback_parts = []
+    
+    if score >= 85:
+        feedback_parts.append("🎉 Excellent answer! You demonstrated strong understanding of the concepts.")
+    elif score >= 70:
+        feedback_parts.append("✅ Good answer! You covered most key points effectively.")
+    elif score >= 55:
+        feedback_parts.append("👍 Fair answer! You have the right idea but could provide more detail.")
+    else:
+        feedback_parts.append("📚 Your answer needs improvement. Let's work on understanding the key concepts.")
+    
+    # Similarity feedback
+    if similarity < 0.3:
+        feedback_parts.append("Consider reviewing the core concepts - your answer doesn't align closely with the expected response.")
+    elif similarity < 0.6:
+        feedback_parts.append("You're on the right track, but try to include more specific details from the lesson material.")
+    
+    # Coverage feedback
+    if coverage < 0.4:
+        feedback_parts.append("Try to address more of key points mentioned in the model answer.")
+    elif coverage < 0.7:
+        feedback_parts.append("You covered some important points. Consider expanding on the main concepts.")
+    
+    # Constructive suggestions
+    model_length = len(model_answer.split())
+    user_length = len(user_answer.split())
+    
+    if user_length < model_length * 0.3:
+        feedback_parts.append("Your answer is quite brief. Try to provide more detailed explanations and examples.")
+    
+    return " ".join(feedback_parts)
 
 # Register the auth blueprint
 app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -61,7 +329,7 @@ def student_dashboard():
         flash(f'Congratulations! You earned a new badge for answering {user.questions_correct} questions correctly!', 'success')
     
     # Get available subjects for course selection
-    subjects = get_all_subjects()
+    subjects = get_all_subjects_from_db()
     
     return render_template('student_dashboard.html', 
                          user=user, 
@@ -79,12 +347,12 @@ def get_question():
     
     # Get filtered question or random if no filters
     if subject or topic:
-        question = get_random_question_by_filters(subject, topic)
+        question = get_random_question_by_filters_from_db(subject, topic)
         if not question:
             flash(f'No questions found for the selected filters. Getting a random question instead.', 'info')
-            question = get_random_question()
+            question = get_random_question_from_db()
     else:
-        question = get_random_question()
+        question = get_random_question_from_db()
     
     session['current_question_id'] = question['id']
     return render_template('question.html', question=question, 
@@ -95,7 +363,7 @@ def get_question():
 def get_topics_for_subject(subject):
     """API endpoint to get topics for a specific subject"""
     from flask import jsonify
-    topics = get_topics_by_subject(subject)
+    topics = get_topics_by_subject_from_db(subject)
     return jsonify({'topics': topics})
 
 @app.route('/student/submit', methods=['POST'])
@@ -114,13 +382,13 @@ def submit_answer():
         return redirect(url_for('student_dashboard'))
     
     # Get the question details
-    question = get_question_by_id(question_id)
+    question = get_question_by_id_from_db(question_id)
     if not question:
         flash('Question not found.', 'error')
         return redirect(url_for('student_dashboard'))
     
-    # Get mock AI scoring
-    scoring_result = mock_ai_score(user_answer, question['model_answer'], question['difficulty'])
+    # Get intelligent AI scoring
+    scoring_result = intelligent_ai_score(user_answer, question['model_answer'], question['difficulty'])
     score = scoring_result['score']
     feedback = scoring_result['feedback']
     
