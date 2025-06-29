@@ -1,0 +1,140 @@
+{% extends "base.html" %}
+
+{% block title %}Edit Question - IntelliTutor Admin{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="fw-bold text-primary mb-1">
+                        <i class="fas fa-edit me-2"></i>Edit Question #{{ question.id }}
+                    </h2>
+                    <p class="text-muted mb-0">Modify question details and model answer</p>
+                </div>
+                <div>
+                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Form -->
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-form me-2"></i>Question Details
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        <div class="row g-3">
+                            <!-- Subject -->
+                            <div class="col-md-6">
+                                <label for="subject" class="form-label fw-semibold">Subject</label>
+                                <select class="form-select" id="subject" name="subject" required>
+                                    {% for subj in subjects %}
+                                    <option value="{{ subj }}" {% if subj == question.subject %}selected{% endif %}>{{ subj }}</option>
+                                    {% endfor %}
+                                    <option value="Other" {% if question.subject not in subjects %}selected{% endif %}>Other</option>
+                                </select>
+                            </div>
+
+                            <!-- Topic -->
+                            <div class="col-md-6">
+                                <label for="topic" class="form-label fw-semibold">Topic</label>
+                                <input type="text" class="form-control" id="topic" name="topic" 
+                                       value="{{ question.topic }}" required>
+                            </div>
+
+                            <!-- Difficulty -->
+                            <div class="col-md-6">
+                                <label for="difficulty" class="form-label fw-semibold">Difficulty</label>
+                                <select class="form-select" id="difficulty" name="difficulty" required>
+                                    <option value="easy" {% if question.difficulty == 'easy' %}selected{% endif %}>Easy</option>
+                                    <option value="medium" {% if question.difficulty == 'medium' %}selected{% endif %}>Medium</option>
+                                    <option value="hard" {% if question.difficulty == 'hard' %}selected{% endif %}>Hard</option>
+                                </select>
+                            </div>
+
+                            <!-- Question Text -->
+                            <div class="col-12">
+                                <label for="question_text" class="form-label fw-semibold">Question Text</label>
+                                <textarea class="form-control" id="question_text" name="question_text" 
+                                          rows="6" required>{{ question.question_text }}</textarea>
+                            </div>
+
+                            <!-- Model Answer -->
+                            <div class="col-12">
+                                <label for="model_answer" class="form-label fw-semibold">Model Answer</label>
+                                <textarea class="form-control" id="model_answer" name="model_answer" 
+                                          rows="8" required>{{ question.model_answer }}</textarea>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="col-12">
+                                <div class="d-flex gap-2 mt-4">
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save me-2"></i>Save Changes
+                                    </button>
+                                    <a href="{{ url_for('admin_dashboard') }}" class="btn btn-outline-secondary">
+                                        <i class="fas fa-times me-2"></i>Cancel
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.form-label {
+    color: #0066cc;
+}
+
+.form-control:focus, .form-select:focus {
+    border-color: #0066cc;
+    box-shadow: 0 0 0 0.25rem rgba(0, 102, 204, 0.25);
+}
+
+.card {
+    border: none;
+    border-radius: 12px;
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    border-bottom: 1px solid #e3f2fd;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0066cc, #004499);
+    border: none;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 500;
+}
+
+.btn-outline-secondary {
+    border-color: #6c757d;
+    color: #6c757d;
+    border-radius: 8px;
+    padding: 10px 24px;
+    font-weight: 500;
+}
+
+.btn-outline-secondary:hover {
+    background-color: #6c757d;
+    border-color: #6c757d;
+}
+</style>
+{% endblock %}

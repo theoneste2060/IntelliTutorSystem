@@ -179,27 +179,20 @@ def calculate_text_similarity(text1, text2):
         return len(intersection) / len(union) if union else 0
 
 def extract_key_concepts(text):
-    """Extract key concepts from text using TextBlob"""
+    """Extract key concepts from text using simple NLP techniques"""
     try:
-        blob = TextBlob(text)
-        # Get noun phrases as key concepts
+        # Simple word-based concept extraction
+        words = re.findall(r'\b[a-zA-Z]{4,}\b', text.lower())
+        
+        # Remove common stop words
+        stop_words = {'this', 'that', 'with', 'have', 'will', 'from', 'they', 'been', 'were', 'said', 
+                     'each', 'which', 'their', 'time', 'would', 'there', 'could', 'other', 'more',
+                     'very', 'what', 'know', 'just', 'first', 'into', 'over', 'think', 'also'}
+        
         concepts = set()
-        
-        # Add noun phrases
-        try:
-            for phrase in blob.noun_phrases:
-                if len(phrase) > 2:  # Filter out very short phrases
-                    concepts.add(phrase.lower())
-        except:
-            pass
-        
-        # Add important single words (nouns, adjectives)
-        try:
-            for word, tag in blob.tags:
-                if tag in ['NN', 'NNS', 'NNP', 'NNPS', 'JJ', 'JJR', 'JJS'] and len(word) > 3:
-                    concepts.add(word.lower())
-        except:
-            pass
+        for word in words:
+            if word not in stop_words and len(word) > 3:
+                concepts.add(word)
         
         return concepts
     except:
@@ -423,14 +416,32 @@ def submit_answer():
 def admin_dashboard():
     """Admin dashboard for managing questions and viewing statistics"""
     
-    # Get all subjects and their question counts
-    subjects = get_all_subjects()
+    # Get all subjects and their question counts from database
+    subjects = get_all_subjects_from_db()
     subject_stats = {}
+    all_questions = []
+    
     for subject in subjects:
-        questions = get_questions_by_subject(subject)
+        # Get questions from database for this subject
+        db_questions = Question.query.filter_by(subject=subject).all()
+        questions_data = []
+        
+        for q in db_questions:
+            questions_data.append({
+                'id': q.id,
+                'subject': q.subject,
+                'topic': q.topic,
+                'question_text': q.question_text[:100] + '...' if len(q.question_text) > 100 else q.question_text,
+                'difficulty': q.difficulty,
+                'created_at': q.created_at.strftime('%Y-%m-%d') if q.created_at else 'Unknown'
+            })
+        
+        all_questions.extend(questions_data)
+        
         subject_stats[subject] = {
-            'count': len(questions),
-            'topics': get_topics_by_subject(subject)
+            'count': len(db_questions),
+            'topics': get_topics_by_subject_from_db(subject),
+            'questions': questions_data
         }
     
     # Get recent answers for monitoring
@@ -439,6 +450,7 @@ def admin_dashboard():
     # Get user statistics
     total_users = User.query.count()
     active_students = User.query.filter_by(role='student').filter(User.questions_attempted > 0).count()
+    total_questions = Question.query.count()
     
     return render_template('admin_dashboard.html',
                          subjects=subjects,
@@ -446,7 +458,55 @@ def admin_dashboard():
                          recent_answers=recent_answers,
                          total_users=total_users,
                          active_students=active_students,
-                         sample_questions=SAMPLE_QUESTIONS)
+                         total_questions=total_questions,
+                         all_questions=all_questions)
+
+@app.route('/admin/question/<int:question_id>/edit', methods=['GET', 'POST'])
+@require_admin
+def edit_question(question_id):
+    """Edit a specific question"""
+    question = Question.query.get_or_404(question_id)
+    
+    if request.method == 'POST':
+        # Update question with form data
+        question.subject = request.form.get('subject', question.subject)
+        question.topic = request.form.get('topic', question.topic)
+        question.question_text = request.form.get('question_text', question.question_text)
+        question.model_answer = request.form.get('model_answer', question.model_answer)
+        question.difficulty = request.form.get('difficulty', question.difficulty)
+        
+        try:
+            db.session.commit()
+            flash(f'Question #{question_id} has been updated successfully.', 'success')
+            return redirect(url_for('admin_dashboard'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error updating question: {str(e)}', 'error')
+    
+    return render_template('admin_edit_question.html', 
+                         question=question, 
+                         subjects=get_all_subjects_from_db())
+
+@app.route('/admin/question/<int:question_id>/delete', methods=['POST'])
+@require_admin
+def delete_question(question_id):
+    """Delete a specific question"""
+    question = Question.query.get_or_404(question_id)
+    
+    try:
+        # Delete associated answers first
+        Answer.query.filter_by(question_id=question_id).delete()
+        
+        # Delete the question
+        db.session.delete(question)
+        db.session.commit()
+        
+        flash(f'Question #{question_id} has been deleted successfully.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error deleting question: {str(e)}', 'error')
+    
+    return redirect(url_for('admin_dashboard'))
 
 @app.route('/admin/upload', methods=['POST'])
 @require_admin

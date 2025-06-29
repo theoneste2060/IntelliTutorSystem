@@ -152,6 +152,15 @@ IntelliTutor is an AI-powered tutoring platform built with Flask that provides p
 - Added comprehensive NLP libraries (TextBlob, scikit-learn) for intelligent scoring
 - Updated models to support enhanced question metadata and confidence scoring
 
+### Admin Dashboard Enhancement (June 29, 2025)
+- Fixed admin dashboard to display actual database questions instead of sample data
+- Added edit/delete functionality for uploaded questions with proper routing
+- Implemented intelligent answer comparison system using TF-IDF and cosine similarity
+- Enhanced scoring algorithm with concept coverage assessment and difficulty adjustment
+- Created admin_edit_question.html template for question editing interface
+- Added JavaScript delete confirmation and form submission functionality
+- Updated question display with creation dates and improved visual organization
+
 ## Changelog
 
 ```
