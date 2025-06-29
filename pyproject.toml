@@ -25,6 +25,7 @@ dependencies = [
     "regex>=2024.11.6",
     "pypdf2>=3.0.1",
     "pymupdf>=1.26.1",
+    "fitz>=0.0.1.dev2",
 ]
 
 [[tool.uv.index]]
