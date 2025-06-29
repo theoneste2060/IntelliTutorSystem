@@ -734,19 +734,24 @@ def admin_analytics():
     avg_score = db.session.query(db.func.avg(Answer.score)).scalar() or 0
     recent_activity = Answer.query.order_by(Answer.created_at.desc()).limit(20).all()
     
-    # Performance trends
-    score_distribution = db.session.query(
-        db.case(
-            (Answer.score >= 90, '90-100'),
-            (Answer.score >= 80, '80-89'),
-            (Answer.score >= 70, '70-79'),
-            (Answer.score >= 60, '60-69'),
-            else_='Below 60'
-        ).label('score_range'),
-        db.func.count(Answer.id)
-    ).group_by('score_range').all()
+    # Performance trends - simplified approach
+    score_distribution = []
+    if total_answers > 0:
+        score_90_100 = Answer.query.filter(Answer.score >= 90).count()
+        score_80_89 = Answer.query.filter(Answer.score >= 80, Answer.score < 90).count()
+        score_70_79 = Answer.query.filter(Answer.score >= 70, Answer.score < 80).count()
+        score_60_69 = Answer.query.filter(Answer.score >= 60, Answer.score < 70).count()
+        score_below_60 = Answer.query.filter(Answer.score < 60).count()
+        
+        score_distribution = [
+            ('90-100', score_90_100),
+            ('80-89', score_80_89),
+            ('70-79', score_70_79),
+            ('60-69', score_60_69),
+            ('Below 60', score_below_60)
+        ]
     
-    return render_template('admin_analytics.html',
+    return render_template('admin_analytics_simple.html',
                          total_questions=total_questions,
                          questions_by_subject=questions_by_subject,
                          questions_by_difficulty=questions_by_difficulty,

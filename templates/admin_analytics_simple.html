@@ -85,7 +85,7 @@
     </div>
 
     <div class="row g-4">
-        <!-- Questions by Subject Chart -->
+        <!-- Questions by Subject -->
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white border-bottom">
@@ -94,20 +94,28 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="subjectChart" width="400" height="300"></canvas>
-                    <div class="mt-3">
+                    {% if questions_by_subject %}
                         {% for subject, count in questions_by_subject %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-medium">{{ subject }}</span>
-                            <span class="badge bg-primary">{{ count }} questions</span>
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                            <div>
+                                <strong class="text-primary">{{ subject }}</strong>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-primary fs-6">{{ count }} questions</span>
+                            </div>
                         </div>
                         {% endfor %}
-                    </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-book fa-3x mb-3 opacity-50"></i>
+                            <p class="mb-0">No questions available yet.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <!-- Score Distribution Chart -->
+        <!-- Score Distribution -->
         <div class="col-lg-6">
             <div class="card shadow-sm h-100">
                 <div class="card-header bg-white border-bottom">
@@ -116,15 +124,25 @@
                     </h5>
                 </div>
                 <div class="card-body">
-                    <canvas id="scoreChart" width="400" height="300"></canvas>
-                    <div class="mt-3">
+                    {% if score_distribution %}
                         {% for score_range, count in score_distribution %}
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-medium">{{ score_range }}%</span>
-                            <span class="badge bg-success">{{ count }} answers</span>
+                        {% if count > 0 %}
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
+                            <div>
+                                <strong class="text-success">{{ score_range }}%</strong>
+                            </div>
+                            <div class="text-end">
+                                <span class="badge bg-success fs-6">{{ count }} answers</span>
+                            </div>
                         </div>
+                        {% endif %}
                         {% endfor %}
-                    </div>
+                    {% else %}
+                        <div class="text-center text-muted py-4">
+                            <i class="fas fa-chart-bar fa-3x mb-3 opacity-50"></i>
+                            <p class="mb-0">No answer data available yet.</p>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
@@ -140,14 +158,14 @@
                 <div class="card-body">
                     {% if top_performers %}
                         {% for user in top_performers %}
-                        <div class="d-flex justify-content-between align-items-center mb-3 p-2 bg-light rounded">
+                        <div class="d-flex justify-content-between align-items-center mb-3 p-3 bg-light rounded">
                             <div>
-                                <strong>{{ user.first_name or user.username }}</strong>
+                                <strong class="text-warning">{{ user.first_name or user.username }}</strong>
                                 <br>
                                 <small class="text-muted">{{ user.questions_attempted }} questions attempted</small>
                             </div>
                             <div class="text-end">
-                                <span class="badge bg-success fs-6">
+                                <span class="badge bg-warning text-dark fs-6">
                                     {{ "%.1f"|format((user.questions_correct * 100.0 / user.questions_attempted) if user.questions_attempted > 0 else 0) }}%
                                 </span>
                                 <br>
@@ -177,16 +195,16 @@
                     {% if recent_activity %}
                         <div style="max-height: 400px; overflow-y: auto;">
                             {% for answer in recent_activity %}
-                            <div class="d-flex justify-content-between align-items-start mb-3 p-2 border-bottom">
+                            <div class="d-flex justify-content-between align-items-start mb-3 p-3 border-bottom bg-light rounded">
                                 <div>
-                                    <strong>{{ answer.user.first_name or answer.user.username }}</strong>
+                                    <strong class="text-info">{{ answer.user.first_name or answer.user.username }}</strong>
                                     <br>
                                     <small class="text-muted">{{ answer.question.subject }} - {{ answer.question.topic }}</small>
                                     <br>
                                     <small class="text-muted">{{ answer.created_at.strftime('%Y-%m-%d %H:%M') if answer.created_at else 'Unknown' }}</small>
                                 </div>
                                 <div class="text-end">
-                                    <span class="badge bg-{{ 'success' if answer.score >= 70 else 'warning' if answer.score >= 50 else 'danger' }}">
+                                    <span class="badge bg-{{ 'success' if answer.score >= 70 else 'warning' if answer.score >= 50 else 'danger' }} fs-6">
                                         {{ answer.score }}%
                                     </span>
                                 </div>
@@ -214,33 +232,41 @@
                 <div class="card-body">
                     <div class="row g-3">
                         <div class="col-md-4">
-                            <div class="text-center p-3 border rounded">
-                                <i class="fas fa-question-circle fa-2x text-primary mb-2"></i>
-                                <h6>Questions Data</h6>
+                            <div class="text-center p-4 border rounded">
+                                <i class="fas fa-question-circle fa-3x text-primary mb-3"></i>
+                                <h6 class="fw-bold">Questions Data</h6>
                                 <p class="small text-muted mb-3">Export all questions with answers</p>
                                 <div class="btn-group">
-                                    <a href="{{ url_for('export_data', type='questions', format='csv') }}" class="btn btn-outline-primary btn-sm">CSV</a>
-                                    <a href="{{ url_for('export_data', type='questions', format='json') }}" class="btn btn-outline-primary btn-sm">JSON</a>
+                                    <a href="{{ url_for('export_data', type='questions', format='csv') }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-file-csv me-1"></i>CSV
+                                    </a>
+                                    <a href="{{ url_for('export_data', type='questions', format='json') }}" class="btn btn-outline-primary btn-sm">
+                                        <i class="fas fa-file-code me-1"></i>JSON
+                                    </a>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-center p-3 border rounded">
-                                <i class="fas fa-clipboard-check fa-2x text-success mb-2"></i>
-                                <h6>Student Answers</h6>
+                            <div class="text-center p-4 border rounded">
+                                <i class="fas fa-clipboard-check fa-3x text-success mb-3"></i>
+                                <h6 class="fw-bold">Student Answers</h6>
                                 <p class="small text-muted mb-3">Export all student responses</p>
                                 <div class="btn-group">
-                                    <a href="{{ url_for('export_data', type='answers', format='csv') }}" class="btn btn-outline-success btn-sm">CSV</a>
+                                    <a href="{{ url_for('export_data', type='answers', format='csv') }}" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-file-csv me-1"></i>CSV
+                                    </a>
                                 </div>
                             </div>
                         </div>
                         <div class="col-md-4">
-                            <div class="text-center p-3 border rounded">
-                                <i class="fas fa-users fa-2x text-warning mb-2"></i>
-                                <h6>User Performance</h6>
+                            <div class="text-center p-4 border rounded">
+                                <i class="fas fa-users fa-3x text-warning mb-3"></i>
+                                <h6 class="fw-bold">User Performance</h6>
                                 <p class="small text-muted mb-3">Export student statistics</p>
                                 <div class="btn-group">
-                                    <a href="{{ url_for('export_data', type='users', format='csv') }}" class="btn btn-outline-warning btn-sm">CSV</a>
+                                    <a href="{{ url_for('export_data', type='users', format='csv') }}" class="btn btn-outline-warning btn-sm">
+                                        <i class="fas fa-file-csv me-1"></i>CSV
+                                    </a>
                                 </div>
                             </div>
                         </div>
@@ -251,70 +277,9 @@
     </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script>
-// Subject Distribution Chart
-const subjectCtx = document.getElementById('subjectChart').getContext('2d');
-const subjectLabels = {{ questions_by_subject | map(attribute='0') | list | tojson }};
-const subjectData = {{ questions_by_subject | map(attribute='1') | list | tojson }};
-
-const subjectChart = new Chart(subjectCtx, {
-    type: 'doughnut',
-    data: {
-        labels: subjectLabels,
-        datasets: [{
-            data: subjectData,
-            backgroundColor: [
-                '#0066cc', '#28a745', '#ffc107', '#dc3545', '#6f42c1', '#20c997', '#fd7e14'
-            ]
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                position: 'bottom'
-            }
-        }
-    }
-});
-
-// Score Distribution Chart
-const scoreCtx = document.getElementById('scoreChart').getContext('2d');
-const scoreLabels = {{ score_distribution | map(attribute='0') | list | tojson }};
-const scoreData = {{ score_distribution | map(attribute='1') | list | tojson }};
-
-const scoreChart = new Chart(scoreCtx, {
-    type: 'bar',
-    data: {
-        labels: scoreLabels,
-        datasets: [{
-            label: 'Number of Answers',
-            data: scoreData,
-            backgroundColor: '#28a745'
-        }]
-    },
-    options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: {
-            legend: {
-                display: false
-            }
-        },
-        scales: {
-            y: {
-                beginAtZero: true
-            }
-        }
-    }
-});
-</script>
-
 <style>
 .stat-card {
-    transition: transform 0.2s;
+    transition: transform 0.2s ease;
 }
 
 .stat-card:hover {
@@ -331,8 +296,16 @@ const scoreChart = new Chart(scoreCtx, {
 }
 
 .admin-header {
-    background: linear-gradient(135deg, #2c3e50, #34495e);
+    background: linear-gradient(135deg, #2c3e50, #34495e) !important;
     border-radius: 12px;
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.border-bottom {
+    border-bottom: 1px solid #e3f2fd !important;
 }
 </style>
 {% endblock %}
