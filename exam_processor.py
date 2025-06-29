@@ -7,6 +7,7 @@ import os
 from werkzeug.utils import secure_filename
 from flask import current_app
 from simplified_pdf_processor import SimplifiedPDFProcessor
+from nesa_pdf_processor import NESAPDFProcessor
 from models import Question, db
 import json
 import logging
@@ -20,6 +21,7 @@ class ExamProcessor:
         self.upload_folder = upload_folder
         self.allowed_extensions = {'pdf'}
         self.pdf_extractor = SimplifiedPDFProcessor()
+        self.nesa_processor = NESAPDFProcessor()
         
         # Create upload folder if it doesn't exist
         os.makedirs(upload_folder, exist_ok=True)
@@ -41,13 +43,13 @@ class ExamProcessor:
     def process_pdf(self, filepath, exam_metadata=None):
         """Process uploaded PDF and extract questions with NLP answers"""
         try:
-            # Use enhanced PDF processor to extract complete questions
-            extracted_questions = self.pdf_extractor.process_pdf(filepath)
+            # Use NESA-specific PDF processor to extract numbered questions
+            extracted_questions = self.nesa_processor.process_pdf(filepath)
             
-            # Convert enhanced questions to our format
+            # Convert NESA questions to our format
             processed_questions = []
             for q in extracted_questions:
-                processed_q = self._convert_enhanced_question(q, exam_metadata)
+                processed_q = self._convert_nesa_question(q, exam_metadata)
                 processed_questions.append(processed_q)
             
             return {
@@ -68,6 +70,29 @@ class ExamProcessor:
                 'error': str(e),
                 'questions': []
             }
+    
+    def _convert_nesa_question(self, nesa_question, exam_metadata=None):
+        """Convert NESA question format to our internal format"""
+        return {
+            'id': f"nesa_{hash(nesa_question.text + nesa_question.number)}",
+            'number': nesa_question.number,
+            'text': nesa_question.text,
+            'generated_answer': nesa_question.model_answer,
+            'complexity': nesa_question.difficulty,
+            'type': nesa_question.question_type,
+            'marks': nesa_question.marks,
+            'subject_keywords': [nesa_question.subject, nesa_question.topic],
+            'course': nesa_question.subject,
+            'level': 'Level 5',
+            'topic': nesa_question.topic,
+            'is_selected': True,
+            'needs_review': nesa_question.has_multiple_choice or nesa_question.has_table,  # Review questions with complex elements
+            'page_num': nesa_question.page_num,
+            'confidence_score': 0.9,  # NESA processor provides high confidence
+            'has_multiple_choice': nesa_question.has_multiple_choice,
+            'has_table': nesa_question.has_table,
+            'multiple_choice_options': nesa_question.multiple_choice_options or []
+        }
     
     def _convert_enhanced_question(self, question_result, exam_metadata=None):
         """Convert simplified question format to our internal format"""
